@@ -18,3 +18,7 @@
 	padding-left: 6px;
 	text-decoration: none;
 }
+
+.v-widget.exttokenfield	.token .token-label {
+	display: inline-block;
+}

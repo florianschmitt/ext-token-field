@@ -35,5 +35,9 @@ public class ExtTokenFieldWidget extends FlowPanel
 		t2.setLabel("Ein weiterer Test");
 		add(t2);
 
+		TokenWidget t3 = new TokenWidget();
+		t3.setLabel("Ein weiterer sehr sehr sehr sehr sehr sehr langer Text");
+		add(t3);
+
 	}
 }
