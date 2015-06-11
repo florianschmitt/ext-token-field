@@ -16,15 +16,24 @@
 
 package com.explicatis.ext_token_field.client;
 
-import com.google.gwt.user.client.ui.HorizontalPanel;
-import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.FlowPanel;
 
-public class ExtTokenFieldWidget extends HorizontalPanel
+public class ExtTokenFieldWidget extends FlowPanel
 {
+
+	public static final String	TOKEN_FIELD_CLASS_NAME	= "exttokenfield";
 
 	public ExtTokenFieldWidget()
 	{
-		Label l = new Label("test");
-		add(l);
+		getElement().setClassName(TOKEN_FIELD_CLASS_NAME);
+
+		TokenWidget t = new TokenWidget();
+		t.setLabel("Ein Test");
+		add(t);
+
+		TokenWidget t2 = new TokenWidget();
+		t2.setLabel("Ein weiterer Test");
+		add(t2);
+
 	}
 }

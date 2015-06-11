@@ -1,0 +1,20 @@
+.v-widget.exttokenfield {
+	display: block;
+}
+
+.v-widget.exttokenfield	.token {
+	display: inline-block;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	padding-left: 6px;
+	padding-right: 6px;
+	background-color: #f0ad4e;
+	margin-right: 6px;
+	color: white;
+}
+
+.v-widget.exttokenfield	.token .token-remove {
+	padding-left: 6px;
+	text-decoration: none;
+}
