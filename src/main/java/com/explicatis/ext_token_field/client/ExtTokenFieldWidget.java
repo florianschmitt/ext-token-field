@@ -21,6 +21,13 @@ import java.util.List;
 
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.Token;
+import com.google.gwt.event.dom.client.BlurEvent;
+import com.google.gwt.event.dom.client.BlurHandler;
+import com.google.gwt.event.dom.client.FocusEvent;
+import com.google.gwt.event.dom.client.FocusHandler;
+import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.event.dom.client.KeyDownEvent;
+import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.vaadin.client.ComponentConnector;
 import com.vaadin.client.ui.VFilterSelect;
@@ -56,9 +63,71 @@ public class ExtTokenFieldWidget extends FlowPanel
 
 	protected TokenWidget buildTokenWidget(Token token)
 	{
-		TokenWidget widget = new TokenWidget(token);
+		final TokenWidget widget = new TokenWidget(token);
 		widget.setServerRpc(serverRpc);
+		widget.addFocusHandler(new FocusHandler()
+		{
+
+			@Override
+			public void onFocus(FocusEvent event)
+			{
+				widget.getElement().addClassName(TokenWidget.FOCUS_CLASS_NAME);
+			}
+		});
+
+		widget.addBlurHandler(new BlurHandler()
+		{
+
+			@Override
+			public void onBlur(BlurEvent event)
+			{
+				widget.getElement().removeClassName(TokenWidget.FOCUS_CLASS_NAME);
+			}
+		});
+
+		widget.addKeyDownHandler(new KeyDownHandler()
+		{
+
+			@Override
+			public void onKeyDown(KeyDownEvent event)
+			{
+				if (event.getNativeKeyCode() == KeyCodes.KEY_LEFT)
+				{
+					leftKeyDown(widget);
+				}
+				else if (event.getNativeKeyCode() == KeyCodes.KEY_RIGHT)
+				{
+					rightKeyDown(widget);
+				}
+			}
+		});
 		return widget;
+	}
+
+	protected void rightKeyDown(TokenWidget token)
+	{
+		if (tokenWidgets.size() > 1)
+		{
+			int indexOf = tokenWidgets.indexOf(token);
+			if (indexOf > 0)
+			{
+				TokenWidget tokenWidget = tokenWidgets.get(indexOf - 1);
+				tokenWidget.setFocus(true);
+			}
+		}
+	}
+
+	protected void leftKeyDown(TokenWidget token)
+	{
+		if (tokenWidgets.size() > 1)
+		{
+			int indexOf = tokenWidgets.indexOf(token);
+			if (indexOf < tokenWidgets.size() - 1)
+			{
+				TokenWidget tokenWidget = tokenWidgets.get(indexOf + 1);
+				tokenWidget.setFocus(true);
+			}
+		}
 	}
 
 	protected void addTokens(List<Token> tokens)
@@ -66,8 +135,8 @@ public class ExtTokenFieldWidget extends FlowPanel
 		for (Token t : tokens)
 		{
 			TokenWidget widget = buildTokenWidget(t);
-			insert(widget, 0);
 			tokenWidgets.add(widget);
+			insert(widget, 0);
 		}
 	}
 

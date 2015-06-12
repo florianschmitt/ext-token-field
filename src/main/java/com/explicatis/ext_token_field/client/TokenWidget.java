@@ -18,12 +18,8 @@ package com.explicatis.ext_token_field.client;
 
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.Token;
-import com.google.gwt.event.dom.client.BlurEvent;
-import com.google.gwt.event.dom.client.BlurHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.FocusEvent;
-import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.FlowPanel;
@@ -68,26 +64,6 @@ public class TokenWidget extends FocusPanel
 
 		internalSetLabel();
 		add(rootPanel);
-
-		addFocusHandler(new FocusHandler()
-		{
-
-			@Override
-			public void onFocus(FocusEvent event)
-			{
-				rootElement.addClassName(FOCUS_CLASS_NAME);
-			}
-		});
-
-		addBlurHandler(new BlurHandler()
-		{
-
-			@Override
-			public void onBlur(BlurEvent event)
-			{
-				rootElement.removeClassName(FOCUS_CLASS_NAME);
-			}
-		});
 	}
 
 	protected ClickHandler labelClickHandler()
