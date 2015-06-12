@@ -33,12 +33,15 @@ import com.vaadin.client.ComponentConnector;
 import com.vaadin.client.ui.VFilterSelect;
 import com.vaadin.shared.Connector;
 
+import elemental.events.KeyboardEvent.KeyCode;
+
 public class ExtTokenFieldWidget extends FlowPanel
 {
 
 	public static final String		TOKEN_FIELD_CLASS_NAME	= "exttokenfield";
 	private List<TokenWidget>		tokenWidgets			= new LinkedList<>();
 	private ExtTokenFieldServerRpc	serverRpc;
+	private VFilterSelect			inputFilterSelect;
 
 	public ExtTokenFieldWidget()
 	{
@@ -49,8 +52,26 @@ public class ExtTokenFieldWidget extends FlowPanel
 	{
 		if (inputField != null)
 		{
-			VFilterSelect widget = (VFilterSelect) ((ComponentConnector) inputField).getWidget();
-			add(widget);
+			inputFilterSelect = (VFilterSelect) ((ComponentConnector) inputField).getWidget();
+			/**
+			 * add key down handler, to select the token at the very left of the filter select when left key was pressed
+			 */
+			inputFilterSelect.tb.addKeyDownHandler(new KeyDownHandler()
+			{
+
+				@Override
+				public void onKeyDown(KeyDownEvent event)
+				{
+					if (event.getNativeKeyCode() == KeyCode.LEFT)
+					{
+						if (ExtTokenFieldWidget.this.tokenWidgets.size() > 0)
+						{
+							tokenWidgets.get(tokenWidgets.size() - 1).setFocus(true);
+						}
+					}
+				}
+			});
+			add(inputFilterSelect);
 		}
 	}
 
@@ -109,10 +130,14 @@ public class ExtTokenFieldWidget extends FlowPanel
 		if (tokenWidgets.size() > 1)
 		{
 			int indexOf = tokenWidgets.indexOf(token);
-			if (indexOf > 0)
+			if (indexOf < tokenWidgets.size() - 1)
 			{
-				TokenWidget tokenWidget = tokenWidgets.get(indexOf - 1);
+				TokenWidget tokenWidget = tokenWidgets.get(indexOf + 1);
 				tokenWidget.setFocus(true);
+			}
+			else if (indexOf == tokenWidgets.size() - 1)
+			{
+				inputFilterSelect.tb.setFocus(true);
 			}
 		}
 	}
@@ -122,9 +147,9 @@ public class ExtTokenFieldWidget extends FlowPanel
 		if (tokenWidgets.size() > 1)
 		{
 			int indexOf = tokenWidgets.indexOf(token);
-			if (indexOf < tokenWidgets.size() - 1)
+			if (indexOf > 0)
 			{
-				TokenWidget tokenWidget = tokenWidgets.get(indexOf + 1);
+				TokenWidget tokenWidget = tokenWidgets.get(indexOf - 1);
 				tokenWidget.setFocus(true);
 			}
 		}
@@ -132,11 +157,12 @@ public class ExtTokenFieldWidget extends FlowPanel
 
 	protected void addTokens(List<Token> tokens)
 	{
-		for (Token t : tokens)
+		for (int i = 0; i < tokens.size(); i++)
 		{
+			Token t = tokens.get(i);
 			TokenWidget widget = buildTokenWidget(t);
 			tokenWidgets.add(widget);
-			insert(widget, 0);
+			insert(widget, i);
 		}
 	}
 
