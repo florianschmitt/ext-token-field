@@ -20,14 +20,22 @@ import com.explicatis.ext_token_field.ExtTokenField;
 import com.explicatis.ext_token_field.client.ExtTokenFieldWidget;
 import com.vaadin.client.ComponentConnector;
 import com.vaadin.client.ConnectorHierarchyChangeEvent;
+import com.vaadin.client.communication.RpcProxy;
 import com.vaadin.client.communication.StateChangeEvent;
-import com.vaadin.client.ui.AbstractSingleComponentContainerConnector;
+import com.vaadin.client.ui.AbstractComponentContainerConnector;
 import com.vaadin.shared.ui.Connect;
 
 @SuppressWarnings("serial")
 @Connect(ExtTokenField.class)
-public class ExtTokenFieldConnector extends AbstractSingleComponentContainerConnector
+public class ExtTokenFieldConnector extends AbstractComponentContainerConnector
 {
+
+	private ExtTokenFieldServerRpc	serverRpc	= RpcProxy.create(ExtTokenFieldServerRpc.class, this);
+
+	public ExtTokenFieldConnector()
+	{
+		getWidget().setServerRpc(serverRpc);
+	}
 
 	@Override
 	public void updateCaption(ComponentConnector connector)
@@ -62,5 +70,6 @@ public class ExtTokenFieldConnector extends AbstractSingleComponentContainerConn
 	public void onStateChanged(StateChangeEvent stateChangeEvent)
 	{
 		super.onStateChanged(stateChangeEvent);
+		getWidget().updateTokens(getState().tokens);
 	}
 }

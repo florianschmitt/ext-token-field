@@ -16,9 +16,24 @@
 
 package com.explicatis.ext_token_field.shared;
 
-import com.vaadin.shared.communication.ServerRpc;
+import java.io.Serializable;
 
-public interface ExtTokenFieldRpc extends ServerRpc
+@SuppressWarnings("serial")
+public class Token implements Serializable
 {
 
+	public Long		id;
+	public String	value;
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (obj != null)
+		{
+			Token other = (Token) obj;
+			if (this.id != null)
+				return this.id.equals(other.id);
+		}
+		return false;
+	}
 }

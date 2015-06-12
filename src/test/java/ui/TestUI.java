@@ -17,10 +17,15 @@
 package ui;
 
 import com.explicatis.ext_token_field.ExtTokenField;
+import com.explicatis.ext_token_field.shared.Token;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
+import com.vaadin.data.Item;
+import com.vaadin.data.Property.ValueChangeEvent;
+import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
@@ -42,9 +47,52 @@ public class TestUI extends UI
 		mainLayout.setMargin(true);
 		mainLayout.addComponent(new Label("Vaadin button:"));
 
+		ComboBox b = new ComboBox();
+		b.addContainerProperty("label", String.class, "");
+		Object addItem = b.addItem();
+		b.getItem(addItem).getItemProperty("label").setValue("test");
+		b.setItemCaptionPropertyId("label");
+
 		ExtTokenField f = new ExtTokenField();
+		f.setInputField(b);
 		mainLayout.addComponent(f);
 
+		b.addValueChangeListener(new ValueChangeListener()
+		{
+
+			@Override
+			public void valueChange(ValueChangeEvent event)
+			{
+				Object id = event.getProperty().getValue();
+				if (id != null)
+				{
+					Item item = b.getItem(id);
+					String string = (String) item.getItemProperty("label").getValue();
+					Token token = new Token();
+					token.id = 123l;
+					token.value = string;
+					f.addToken(token);
+				}
+			}
+		});
+
+		ComboBox b2 = new ComboBox();
+
+		ExtTokenField f2 = new ExtTokenField();
+		f2.setInputField(b2);
+		mainLayout.addComponent(f2);
+
+		Token token2 = new Token();
+		token2.id = 123l;
+		token2.value = "ein Text";
+		f2.addToken(token2);
+
+		Token token3 = new Token();
+		token3.id = 124l;
+		token3.value = "ein sehr sehr sehr sehr sehr sehr sehr sehr sehr sehr langer Text";
+		f2.addToken(token3);
+
 		setContent(mainLayout);
+
 	}
 }

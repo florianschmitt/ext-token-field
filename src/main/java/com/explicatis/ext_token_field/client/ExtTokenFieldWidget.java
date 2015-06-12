@@ -16,28 +16,68 @@
 
 package com.explicatis.ext_token_field.client;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
+import com.explicatis.ext_token_field.shared.Token;
 import com.google.gwt.user.client.ui.FlowPanel;
+import com.vaadin.client.ComponentConnector;
+import com.vaadin.shared.Connector;
 
 public class ExtTokenFieldWidget extends FlowPanel
 {
 
-	public static final String	TOKEN_FIELD_CLASS_NAME	= "exttokenfield";
+	public static final String		TOKEN_FIELD_CLASS_NAME	= "exttokenfield";
+	private List<TokenWidget>		tokenWidgets			= new LinkedList<>();
+	private ExtTokenFieldServerRpc	serverRpc;
 
 	public ExtTokenFieldWidget()
 	{
 		getElement().setClassName(TOKEN_FIELD_CLASS_NAME);
+	}
 
-		TokenWidget t = new TokenWidget();
-		t.setLabel("Ein Test");
-		add(t);
+	public void setInputField(Connector inputField)
+	{
+		if (inputField != null)
+			add(((ComponentConnector) inputField).getWidget());
+	}
 
-		TokenWidget t2 = new TokenWidget();
-		t2.setLabel("Ein weiterer Test");
-		add(t2);
+	public void updateTokens(List<Token> tokens)
+	{
+		// TODO: register changes, not recreate everything
+		removeAllToken();
+		addTokens(tokens);
+	}
 
-		TokenWidget t3 = new TokenWidget();
-		t3.setLabel("Ein weiterer sehr sehr sehr sehr sehr sehr langer Text");
-		add(t3);
+	protected TokenWidget buildTokenWidget(Token token)
+	{
+		TokenWidget widget = new TokenWidget(token);
+		widget.setServerRpc(serverRpc);
+		return widget;
+	}
 
+	protected void addTokens(List<Token> tokens)
+	{
+		for (Token t : tokens)
+		{
+			TokenWidget widget = buildTokenWidget(t);
+			insert(widget, 0);
+			tokenWidgets.add(widget);
+		}
+	}
+
+	protected void removeAllToken()
+	{
+		for (TokenWidget t : tokenWidgets)
+		{
+			remove(t);
+		}
+		tokenWidgets.clear();
+	}
+
+	public void setServerRpc(ExtTokenFieldServerRpc serverRpc)
+	{
+		this.serverRpc = serverRpc;
 	}
 }

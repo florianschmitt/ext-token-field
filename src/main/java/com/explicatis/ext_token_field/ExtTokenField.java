@@ -16,10 +16,89 @@
 
 package com.explicatis.ext_token_field;
 
-import com.vaadin.ui.AbstractComponent;
+import java.util.Iterator;
+import java.util.stream.Stream;
+
+import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
+import com.explicatis.ext_token_field.shared.ExtTokenFieldState;
+import com.explicatis.ext_token_field.shared.Token;
+import com.google.gwt.thirdparty.guava.common.collect.Iterators;
+import com.vaadin.ui.AbstractComponentContainer;
+import com.vaadin.ui.ComboBox;
+import com.vaadin.ui.Component;
 
 @SuppressWarnings("serial")
-public class ExtTokenField extends AbstractComponent
+public class ExtTokenField extends AbstractComponentContainer
 {
 
+	private ExtTokenFieldServerRpc	serverRpc	= new ExtTokenFieldServerRpc()
+												{
+
+													@Override
+													public void tokenDeleteClicked(Token token)
+													{
+														removeToken(token);
+													}
+												};
+
+	public ExtTokenField()
+	{
+		registerRpc(serverRpc);
+		addAttachListener(new AttachListener()
+		{
+
+			@Override
+			public void attach(AttachEvent event)
+			{
+				if (getInputField() == null)
+					throw new RuntimeException("no input field set");
+			}
+		});
+	}
+
+	public void addToken(Token token)
+	{
+		getState().tokens.add(token);
+	}
+
+	public void removeToken(Token token)
+	{
+		getState().tokens.remove(token);
+	}
+
+	public void setInputField(ComboBox field)
+	{
+		addComponent(field);
+		getState().inputField = field;
+	}
+
+	public ComboBox getInputField()
+	{
+		return (ComboBox) getState().inputField;
+	}
+
+	@Override
+	protected ExtTokenFieldState getState()
+	{
+		return (ExtTokenFieldState) super.getState();
+	}
+
+	@Override
+	public void replaceComponent(Component oldComponent, Component newComponent)
+	{
+	}
+
+	@Override
+	public int getComponentCount()
+	{
+		return getInputField() == null ? 0 : 1;
+	}
+
+	@Override
+	public Iterator<Component> iterator()
+	{
+		if (getInputField() == null)
+			return Iterators.emptyIterator();
+		return Stream.of((Component) getInputField()).iterator();
+	}
 }

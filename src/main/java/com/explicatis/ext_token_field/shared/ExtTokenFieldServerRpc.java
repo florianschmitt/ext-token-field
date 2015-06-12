@@ -16,18 +16,10 @@
 
 package com.explicatis.ext_token_field.shared;
 
-import java.util.LinkedList;
-import java.util.List;
+import com.vaadin.shared.communication.ServerRpc;
 
-import com.vaadin.shared.AbstractComponentState;
-import com.vaadin.shared.Connector;
-import com.vaadin.shared.annotations.DelegateToWidget;
-
-@SuppressWarnings("serial")
-public class ExtTokenFieldState extends AbstractComponentState
+public interface ExtTokenFieldServerRpc extends ServerRpc
 {
 
-	@DelegateToWidget
-	public Connector	inputField;
-	public List<Token>	tokens	= new LinkedList<Token>();
+	void tokenDeleteClicked(Token token);
 }

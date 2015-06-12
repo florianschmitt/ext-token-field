@@ -16,43 +16,48 @@
 
 package com.explicatis.ext_token_field.client;
 
+import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
+import com.explicatis.ext_token_field.shared.Token;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.HasClickHandlers;
-import com.google.gwt.event.shared.HandlerRegistration;
-import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
+import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.SimplePanel;
+import com.google.gwt.user.client.ui.Label;
 
 @SuppressWarnings("deprecation")
-public class TokenWidget extends FlowPanel implements HasClickHandlers
+public class TokenWidget extends FlowPanel
 {
 
-	public static final String	TOKEN_CLASS_NAME		= "token";
-	public static final String	TOKEN_LABEL_CLASS_NAME	= "token-label";
-	public static final String	TOKEN_REMOVE_CLASS_NAME	= "token-remove";
+	public static final String		TOKEN_CLASS_NAME		= "token";
+	public static final String		TOKEN_LABEL_CLASS_NAME	= "token-label";
+	public static final String		TOKEN_REMOVE_CLASS_NAME	= "token-remove";
 
-	private SimplePanel			label;
-	protected boolean			isCollapsed				= true;
-	private String				labelText;
-	private int					cropLabelLength			= 20;
+	private Label					label;
 
-	public TokenWidget()
+	protected boolean				isCollapsed				= true;
+	private int						cropLabelLength			= 20;
+	private ExtTokenFieldServerRpc	serverRpc;
+	private final Token				token;
+
+	public TokenWidget(Token token)
 	{
+		this.token = token;
 		Element rootElement = getElement();
 		rootElement.setClassName(TOKEN_CLASS_NAME);
 
-		label = new SimplePanel();
+		label = new Label();
 		label.getElement().setClassName(TOKEN_LABEL_CLASS_NAME);
-		rootElement.appendChild(label.getElement());
+		label.addClickHandler(labelClickHandler());
+		add(label);
 
-		Element removeAnchor = DOM.createAnchor();
-		removeAnchor.setClassName(TOKEN_REMOVE_CLASS_NAME);
-		removeAnchor.setInnerText("×");
-		rootElement.appendChild(removeAnchor);
+		Anchor removeAnchor = new Anchor("×");
+		removeAnchor.getElement().setClassName(TOKEN_REMOVE_CLASS_NAME);
+		add(removeAnchor);
 
-		addClickHandler(labelClickHandler());
+		removeAnchor.addClickHandler(removeClickHandler());
+
+		internalSetLabel();
 	}
 
 	protected ClickHandler labelClickHandler()
@@ -68,23 +73,30 @@ public class TokenWidget extends FlowPanel implements HasClickHandlers
 		};
 	}
 
-	public void setLabel(String labelText)
+	protected ClickHandler removeClickHandler()
 	{
-		this.labelText = labelText;
-		internalSetLabel();
+		return new ClickHandler()
+		{
+
+			@Override
+			public void onClick(ClickEvent event)
+			{
+				serverRpc.tokenDeleteClicked(token);
+			}
+		};
 	}
 
 	protected void internalSetLabel()
 	{
-		if (isCollapsed && labelText.length() > cropLabelLength)
+		if (isCollapsed && token.value != null && token.value.length() > cropLabelLength)
 		{
-			String substring = labelText.substring(0, cropLabelLength);
+			String substring = token.value.substring(0, cropLabelLength);
 			substring += "...";
-			label.getElement().setInnerText(substring);
+			label.setText(substring);
 		}
 		else
 		{
-			label.getElement().setInnerText(labelText);
+			label.setText(token.value);
 		}
 	}
 
@@ -111,9 +123,8 @@ public class TokenWidget extends FlowPanel implements HasClickHandlers
 		isCollapsed = true;
 	}
 
-	@Override
-	public HandlerRegistration addClickHandler(ClickHandler handler)
+	public void setServerRpc(ExtTokenFieldServerRpc serverRpc)
 	{
-		return addDomHandler(handler, ClickEvent.getType());
+		this.serverRpc = serverRpc;
 	}
 }
