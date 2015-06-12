@@ -127,18 +127,15 @@ public class ExtTokenFieldWidget extends FlowPanel
 
 	protected void rightKeyDown(TokenWidget token)
 	{
-		if (tokenWidgets.size() > 1)
+		int indexOf = tokenWidgets.indexOf(token);
+		if (indexOf < tokenWidgets.size() - 1)
 		{
-			int indexOf = tokenWidgets.indexOf(token);
-			if (indexOf < tokenWidgets.size() - 1)
-			{
-				TokenWidget tokenWidget = tokenWidgets.get(indexOf + 1);
-				tokenWidget.setFocus(true);
-			}
-			else if (indexOf == tokenWidgets.size() - 1)
-			{
-				inputFilterSelect.tb.setFocus(true);
-			}
+			TokenWidget tokenWidget = tokenWidgets.get(indexOf + 1);
+			tokenWidget.setFocus(true);
+		}
+		else if (indexOf == tokenWidgets.size() - 1)
+		{
+			inputFilterSelect.tb.setFocus(true);
 		}
 	}
 
