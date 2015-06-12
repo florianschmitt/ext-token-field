@@ -22,6 +22,10 @@
 		rgba(102, 175, 233, 0.6);
 }
 
+.v-widget.exttokenfield	.token.focused {
+	border-color: red;
+}
+
 .v-widget.exttokenfield	.token .token-remove {
 	padding-left: 6px;
 	text-decoration: none;

@@ -23,6 +23,7 @@ import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.Token;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.vaadin.client.ComponentConnector;
+import com.vaadin.client.ui.VFilterSelect;
 import com.vaadin.shared.Connector;
 
 public class ExtTokenFieldWidget extends FlowPanel
@@ -40,7 +41,10 @@ public class ExtTokenFieldWidget extends FlowPanel
 	public void setInputField(Connector inputField)
 	{
 		if (inputField != null)
-			add(((ComponentConnector) inputField).getWidget());
+		{
+			VFilterSelect widget = (VFilterSelect) ((ComponentConnector) inputField).getWidget();
+			add(widget);
+		}
 	}
 
 	public void updateTokens(List<Token> tokens)
