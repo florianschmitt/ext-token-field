@@ -14,20 +14,30 @@
  * limitations under the License.
  */
 
-package com.explicatis.ext_token_field.shared;
+package com.explicatis.ext_token_field;
 
-import java.util.LinkedList;
-import java.util.List;
-
-import com.vaadin.shared.AbstractFieldState;
-import com.vaadin.shared.Connector;
-import com.vaadin.shared.annotations.DelegateToWidget;
-
-@SuppressWarnings("serial")
-public class ExtTokenFieldState extends AbstractFieldState
+public class SimpleTokenizable implements Tokenizable
 {
 
-	@DelegateToWidget
-	public Connector	inputField;
-	public List<Token>	tokens	= new LinkedList<Token>();
+	private long	id;
+	private String	stringValue;
+
+	public SimpleTokenizable(long id, String stringValue)
+	{
+		this.id = id;
+		this.stringValue = stringValue;
+	}
+
+	@Override
+	public String getStringValue()
+	{
+		return stringValue;
+	}
+
+	@Override
+	public long getIdentifier()
+	{
+		return id;
+	}
+
 }

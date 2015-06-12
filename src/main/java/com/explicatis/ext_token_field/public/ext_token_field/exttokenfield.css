@@ -1,6 +1,10 @@
 .v-widget.exttokenfield {
 	display: block;
-	background-color: gray;
+	background-color: lightblue;
+	border: 1px solid gray; 
+	-moz-border-radius: 2px;
+	border-radius: 2px;
+	-webkit-border-radius: 2px;
 }
 
 .v-widget.exttokenfield	.token {
@@ -33,4 +37,14 @@
 
 .v-widget.exttokenfield	.token .token-label {
 	display: inline-block;
+}
+
+.v-widget.exttokenfield .v-filterselect .v-filterselect-input {
+	border: 0;
+	background-color: inherit;
+	box-shadow: inherit;
+}
+
+.v-widget.exttokenfield .v-filterselect .v-filterselect-button {
+	display: none;
 }

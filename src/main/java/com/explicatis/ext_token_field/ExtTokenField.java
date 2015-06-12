@@ -16,19 +16,24 @@
 
 package com.explicatis.ext_token_field;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldState;
 import com.explicatis.ext_token_field.shared.Token;
 import com.google.gwt.thirdparty.guava.common.collect.Iterators;
-import com.vaadin.ui.AbstractComponentContainer;
+import com.vaadin.ui.AbstractField;
+import com.vaadin.ui.AbstractSingleComponentContainer;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
+import com.vaadin.ui.HasComponents;
 
 @SuppressWarnings("serial")
-public class ExtTokenField extends AbstractComponentContainer
+public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> implements HasComponents// , Editor
 {
 
 	private ExtTokenFieldServerRpc	serverRpc	= new ExtTokenFieldServerRpc()
@@ -56,14 +61,50 @@ public class ExtTokenField extends AbstractComponentContainer
 		});
 	}
 
-	public void addToken(Token token)
+	private Map<Token, Tokenizable>	map	= new HashMap<>();
+
+	@Override
+	protected void setInternalValue(List<? extends Tokenizable> newValue)
+	{
+		super.setInternalValue(newValue);
+
+		removeAllToken();
+		map.clear();
+
+		for (Tokenizable t : newValue)
+		{
+			Token token = convertTokenizableToToken(t);
+			addToken(token);
+			map.put(token, t);
+		}
+	}
+
+	protected Token convertTokenizableToToken(Tokenizable value)
+	{
+		Token result = new Token();
+		result.id = value.getIdentifier();
+		result.value = value.getStringValue();
+		return result;
+	}
+
+	private void addToken(Token token)
 	{
 		getState().tokens.add(token);
 	}
 
-	public void removeToken(Token token)
+	private void removeToken(Token token)
 	{
 		getState().tokens.remove(token);
+
+		Tokenizable tokenizable = map.get(token);
+		List<? extends Tokenizable> value2 = getValue();
+		value2.remove(tokenizable);
+		setValue(value2);
+	}
+
+	private void removeAllToken()
+	{
+		getState().tokens.clear();
 	}
 
 	public void setInputField(ComboBox field)
@@ -84,21 +125,50 @@ public class ExtTokenField extends AbstractComponentContainer
 	}
 
 	@Override
-	public void replaceComponent(Component oldComponent, Component newComponent)
-	{
-	}
-
-	@Override
-	public int getComponentCount()
-	{
-		return getInputField() == null ? 0 : 1;
-	}
-
-	@Override
 	public Iterator<Component> iterator()
 	{
 		if (getInputField() == null)
 			return Iterators.emptyIterator();
 		return Stream.of((Component) getInputField()).iterator();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Class<? extends List<? extends Tokenizable>> getType()
+	{
+		return (Class<? extends List<? extends Tokenizable>>) List.class;
+	}
+
+	/**
+	 * copied from AbstractComponentContainer
+	 * 
+	 * @param c
+	 */
+	public void addComponent(Component c)
+	{
+		// Make sure we're not adding the component inside it's own content
+		if (isOrHasAncestor(c))
+		{
+			throw new IllegalArgumentException("Component cannot be added inside it's own content");
+		}
+
+		if (c.getParent() != null)
+		{
+			// If the component already has a parent, try to remove it
+			AbstractSingleComponentContainer.removeFromParent(c);
+		}
+
+		c.setParent(this);
+		fireComponentAttachEvent(c);
+		markAsDirty();
+	}
+
+	/**
+	 * copied from AbstractComponentContainer
+	 * 
+	 */
+	protected void fireComponentAttachEvent(Component component)
+	{
+		fireEvent(new ComponentAttachEvent(this, component));
 	}
 }

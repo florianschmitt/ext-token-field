@@ -16,8 +16,12 @@
 
 package ui;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import com.explicatis.ext_token_field.ExtTokenField;
-import com.explicatis.ext_token_field.shared.Token;
+import com.explicatis.ext_token_field.SimpleTokenizable;
+import com.explicatis.ext_token_field.Tokenizable;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
 import com.vaadin.data.Item;
@@ -26,10 +30,12 @@ import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.ui.ComboBox;
-import com.vaadin.ui.Label;
+import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
+
+import data.MyCustomBean;
 
 @SuppressWarnings("serial")
 @SpringUI
@@ -45,9 +51,10 @@ public class TestUI extends UI
 	{
 		mainLayout = new VerticalLayout();
 		mainLayout.setMargin(true);
-		mainLayout.addComponent(new Label("Vaadin button:"));
+		mainLayout.setSpacing(true);
 
 		ComboBox b = new ComboBox();
+		b.setInputPrompt("Type here");
 		b.addContainerProperty("label", String.class, "");
 		Object addItem = b.addItem();
 		b.getItem(addItem).getItemProperty("label").setValue("test");
@@ -68,51 +75,59 @@ public class TestUI extends UI
 				{
 					Item item = b.getItem(id);
 					String string = (String) item.getItemProperty("label").getValue();
-					Token token = new Token();
-					token.id = 123l;
-					token.value = string;
-					f.addToken(token);
+
+					SimpleTokenizable t = new SimpleTokenizable(1, string);
+					@SuppressWarnings("unchecked")
+					List<Tokenizable> value = (List<Tokenizable>) f.getValue();
+					if (value == null)
+					{
+						value = new LinkedList<>();
+					}
+					value.add(t);
+					f.setValue(value);
+					;
 				}
 			}
 		});
 
 		ComboBox b2 = new ComboBox();
+		b2.setWidth(100, Unit.PERCENTAGE);
+		b2.setInputPrompt("Type here");
 
 		ExtTokenField f2 = new ExtTokenField();
 		f2.setInputField(b2);
 		mainLayout.addComponent(f2);
 
-		Token token2 = new Token();
-		token2.id = 123l;
-		token2.value = "ein Text";
-		f2.addToken(token2);
+		List<SimpleTokenizable> list = new LinkedList<>();
+		list.add(new SimpleTokenizable(123l, "ein Text"));
+		list.add(new SimpleTokenizable(124l, "ein sehr sehr sehr sehr sehr sehr sehr sehr sehr sehr langer Text"));
 
-		Token token3 = new Token();
-		token3.id = 124l;
-		token3.value = "ein sehr sehr sehr sehr sehr sehr sehr sehr sehr sehr langer Text";
-		f2.addToken(token3);
+		f2.setValue(list);
 
-		Token token4 = new Token();
-		token4.id = 125l;
-		token4.value = "ein Text";
-		f2.addToken(token4);
-
-		Token token5 = new Token();
-		token5.id = 126l;
-		token5.value = "ein Text";
-		f2.addToken(token5);
-
-		Token token6 = new Token();
-		token6.id = 127l;
-		token6.value = "ein Text";
-		f2.addToken(token6);
-
-		Token token7 = new Token();
-		token7.id = 128l;
-		token7.value = "ein Text";
-		f2.addToken(token7);
+		mainLayout.addComponent(getTestLayout3());
 
 		setContent(mainLayout);
+	}
 
+	private HorizontalLayout getTestLayout3()
+	{
+		HorizontalLayout result = new HorizontalLayout();
+
+		List<MyCustomBean> list = new LinkedList<>();
+		list.add(new MyCustomBean(1, "Wert 1"));
+		list.add(new MyCustomBean(2, "Wert 2"));
+		list.add(new MyCustomBean(3, "Wert 3"));
+		list.add(new MyCustomBean(4, "Wert 4"));
+
+		ComboBox combo = new ComboBox();
+		combo.setInputPrompt("Type here");
+
+		ExtTokenField tokenField = new ExtTokenField();
+		tokenField.setInputField(combo);
+		result.addComponent(tokenField);
+
+		tokenField.setValue(list);
+
+		return result;
 	}
 }
