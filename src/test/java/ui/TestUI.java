@@ -92,6 +92,26 @@ public class TestUI extends UI
 		token3.value = "ein sehr sehr sehr sehr sehr sehr sehr sehr sehr sehr langer Text";
 		f2.addToken(token3);
 
+		Token token4 = new Token();
+		token4.id = 125l;
+		token4.value = "ein Text";
+		f2.addToken(token4);
+
+		Token token5 = new Token();
+		token5.id = 126l;
+		token5.value = "ein Text";
+		f2.addToken(token5);
+
+		Token token6 = new Token();
+		token6.id = 127l;
+		token6.value = "ein Text";
+		f2.addToken(token6);
+
+		Token token7 = new Token();
+		token7.id = 128l;
+		token7.value = "ein Text";
+		f2.addToken(token7);
+
 		setContent(mainLayout);
 
 	}

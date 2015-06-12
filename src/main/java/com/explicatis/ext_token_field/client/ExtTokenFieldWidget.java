@@ -21,6 +21,8 @@ import java.util.List;
 
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.Token;
+import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.event.dom.client.BlurEvent;
 import com.google.gwt.event.dom.client.BlurHandler;
 import com.google.gwt.event.dom.client.FocusEvent;
@@ -39,9 +41,11 @@ public class ExtTokenFieldWidget extends FlowPanel
 {
 
 	public static final String		TOKEN_FIELD_CLASS_NAME	= "exttokenfield";
+
 	private List<TokenWidget>		tokenWidgets			= new LinkedList<>();
 	private ExtTokenFieldServerRpc	serverRpc;
 	private VFilterSelect			inputFilterSelect;
+	private Token					tokenToTheRight;
 
 	public ExtTokenFieldWidget()
 	{
@@ -82,12 +86,50 @@ public class ExtTokenFieldWidget extends FlowPanel
 		// TODO: register changes, not recreate everything
 		removeAllToken();
 		addTokens(tokens);
+
+		if (tokenToTheRight != null)
+		{
+			final TokenWidget tokenWidget = findTokenWidget(tokenToTheRight);
+			Scheduler.get().scheduleDeferred(new ScheduledCommand()
+			{
+
+				@Override
+				public void execute()
+				{
+					if (tokenWidget != null)
+					{
+						tokenWidget.setFocus(true);
+					}
+					tokenToTheRight = null;
+				}
+			});
+		}
+		else
+		{
+			// TODO: this should only happen after the very last token was deleted, not always...
+			Scheduler.get().scheduleDeferred(new ScheduledCommand()
+			{
+
+				@Override
+				public void execute()
+				{
+					inputFilterSelect.tb.setFocus(true);
+				}
+			});
+		}
 	}
 
 	protected TokenWidget buildTokenWidget(final Token token)
 	{
-		final TokenWidget widget = new TokenWidget(token);
-		widget.setServerRpc(serverRpc);
+		final TokenWidget widget = new TokenWidget(token)
+		{
+
+			@Override
+			protected void onDeleteClicked()
+			{
+				tokenDeleteScheduled(this);
+			}
+		};
 		widget.addFocusHandler(new FocusHandler()
 		{
 
@@ -124,12 +166,22 @@ public class ExtTokenFieldWidget extends FlowPanel
 				}
 				else if (event.getNativeKeyCode() == KeyCodes.KEY_DELETE || event.getNativeKeyCode() == KeyCodes.KEY_BACKSPACE)
 				{
-					serverRpc.tokenDeleteClicked(token);
-					inputFilterSelect.tb.setFocus(true);
+					tokenDeleteScheduled(widget);
 				}
 			}
 		});
 		return widget;
+	}
+
+	protected void tokenDeleteScheduled(TokenWidget widget)
+	{
+		TokenWidget tokenWidgetToTheRight = getTokenToTheRight(widget);
+		if (tokenWidgetToTheRight != null)
+		{
+			tokenToTheRight = tokenWidgetToTheRight.getToken();
+		}
+
+		serverRpc.tokenDeleteClicked(widget.getToken());
 	}
 
 	protected void rightKeyDown(TokenWidget token)
@@ -207,6 +259,19 @@ public class ExtTokenFieldWidget extends FlowPanel
 			remove(t);
 		}
 		tokenWidgets.clear();
+	}
+
+	private TokenWidget findTokenWidget(Token token)
+	{
+		for (TokenWidget t : tokenWidgets)
+		{
+			if (t.getToken().equals(token))
+			{
+				return t;
+			}
+		}
+
+		return null;
 	}
 
 	public void setServerRpc(ExtTokenFieldServerRpc serverRpc)

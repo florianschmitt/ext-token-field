@@ -16,7 +16,6 @@
 
 package com.explicatis.ext_token_field.client;
 
-import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.Token;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -30,17 +29,16 @@ import com.google.gwt.user.client.ui.Label;
 public class TokenWidget extends FocusPanel
 {
 
-	public static final String		TOKEN_CLASS_NAME		= "token";
-	public static final String		TOKEN_LABEL_CLASS_NAME	= "token-label";
-	public static final String		TOKEN_REMOVE_CLASS_NAME	= "token-remove";
-	public static final String		FOCUS_CLASS_NAME		= "focused";
+	public static final String	TOKEN_CLASS_NAME		= "token";
+	public static final String	TOKEN_LABEL_CLASS_NAME	= "token-label";
+	public static final String	TOKEN_REMOVE_CLASS_NAME	= "token-remove";
+	public static final String	FOCUS_CLASS_NAME		= "focused";
 
-	private Label					label;
+	private Label				label;
 
-	protected boolean				isCollapsed				= true;
-	private int						cropLabelLength			= 20;
-	private ExtTokenFieldServerRpc	serverRpc;
-	private final Token				token;
+	protected boolean			isCollapsed				= true;
+	private int					cropLabelLength			= 20;
+	private final Token			token;
 
 	public TokenWidget(Token token)
 	{
@@ -66,6 +64,11 @@ public class TokenWidget extends FocusPanel
 		add(rootPanel);
 	}
 
+	public Token getToken()
+	{
+		return token;
+	}
+
 	protected ClickHandler labelClickHandler()
 	{
 		return new ClickHandler()
@@ -87,9 +90,14 @@ public class TokenWidget extends FocusPanel
 			@Override
 			public void onClick(ClickEvent event)
 			{
-				serverRpc.tokenDeleteClicked(token);
+				onDeleteClicked();
 			}
 		};
+	}
+
+	protected void onDeleteClicked()
+	{
+
 	}
 
 	protected void internalSetLabel()
@@ -127,10 +135,5 @@ public class TokenWidget extends FocusPanel
 	public void collapse()
 	{
 		isCollapsed = true;
-	}
-
-	public void setServerRpc(ExtTokenFieldServerRpc serverRpc)
-	{
-		this.serverRpc = serverRpc;
 	}
 }
