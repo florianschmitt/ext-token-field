@@ -55,6 +55,8 @@ public class ExtTokenFieldWidget extends FlowPanel
 			inputFilterSelect = (VFilterSelect) ((ComponentConnector) inputField).getWidget();
 			/**
 			 * add key down handler, to select the token at the very left of the filter select when left key was pressed
+			 * 
+			 * TODO: more work to do... make sure suggestion box is closed etc.
 			 */
 			inputFilterSelect.tb.addKeyDownHandler(new KeyDownHandler()
 			{
@@ -82,7 +84,7 @@ public class ExtTokenFieldWidget extends FlowPanel
 		addTokens(tokens);
 	}
 
-	protected TokenWidget buildTokenWidget(Token token)
+	protected TokenWidget buildTokenWidget(final Token token)
 	{
 		final TokenWidget widget = new TokenWidget(token);
 		widget.setServerRpc(serverRpc);
@@ -120,6 +122,11 @@ public class ExtTokenFieldWidget extends FlowPanel
 				{
 					rightKeyDown(widget);
 				}
+				else if (event.getNativeKeyCode() == KeyCodes.KEY_DELETE || event.getNativeKeyCode() == KeyCodes.KEY_BACKSPACE)
+				{
+					serverRpc.tokenDeleteClicked(token);
+					inputFilterSelect.tb.setFocus(true);
+				}
 			}
 		});
 		return widget;
@@ -127,13 +134,13 @@ public class ExtTokenFieldWidget extends FlowPanel
 
 	protected void rightKeyDown(TokenWidget token)
 	{
-		int indexOf = tokenWidgets.indexOf(token);
-		if (indexOf < tokenWidgets.size() - 1)
+		TokenWidget tokenToTheRight = getTokenToTheRight(token);
+
+		if (tokenToTheRight != null)
 		{
-			TokenWidget tokenWidget = tokenWidgets.get(indexOf + 1);
-			tokenWidget.setFocus(true);
+			tokenToTheRight.setFocus(true);
 		}
-		else if (indexOf == tokenWidgets.size() - 1)
+		else
 		{
 			inputFilterSelect.tb.setFocus(true);
 		}
@@ -141,15 +148,45 @@ public class ExtTokenFieldWidget extends FlowPanel
 
 	protected void leftKeyDown(TokenWidget token)
 	{
-		if (tokenWidgets.size() > 1)
+		TokenWidget tokenToTheLeft = getTokenToTheLeft(token);
+		if (tokenToTheLeft != null)
 		{
-			int indexOf = tokenWidgets.indexOf(token);
-			if (indexOf > 0)
-			{
-				TokenWidget tokenWidget = tokenWidgets.get(indexOf - 1);
-				tokenWidget.setFocus(true);
-			}
+			tokenToTheLeft.setFocus(true);
 		}
+	}
+
+	protected TokenWidget getTokenToTheLeft(TokenWidget token)
+	{
+		if (!hasMoreTokensLeft(token))
+		{
+			return null;
+		}
+		int indexOf = tokenWidgets.indexOf(token);
+		TokenWidget tokenWidget = tokenWidgets.get(indexOf - 1);
+		return tokenWidget;
+	}
+
+	protected TokenWidget getTokenToTheRight(TokenWidget token)
+	{
+		if (!hasMoreTokensRight(token))
+		{
+			return null;
+		}
+		int indexOf = tokenWidgets.indexOf(token);
+		TokenWidget tokenWidget = tokenWidgets.get(indexOf + 1);
+		return tokenWidget;
+	}
+
+	protected boolean hasMoreTokensLeft(TokenWidget token)
+	{
+		int indexOf = tokenWidgets.indexOf(token);
+		return indexOf > 0;
+	}
+
+	protected boolean hasMoreTokensRight(TokenWidget token)
+	{
+		int indexOf = tokenWidgets.indexOf(token);
+		return indexOf < tokenWidgets.size() - 1;
 	}
 
 	protected void addTokens(List<Token> tokens)
