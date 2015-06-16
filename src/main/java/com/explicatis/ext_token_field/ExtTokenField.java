@@ -26,7 +26,9 @@ import java.util.stream.Stream;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldState;
 import com.explicatis.ext_token_field.shared.Token;
+import com.explicatis.ext_token_field.shared.TokenAction;
 import com.google.gwt.thirdparty.guava.common.collect.Iterators;
+import com.vaadin.server.FontAwesome;
 import com.vaadin.ui.AbstractField;
 import com.vaadin.ui.AbstractSingleComponentContainer;
 import com.vaadin.ui.ComboBox;
@@ -34,20 +36,24 @@ import com.vaadin.ui.Component;
 import com.vaadin.ui.HasComponents;
 
 @SuppressWarnings("serial")
-public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> implements HasComponents// , Editor
+public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> implements HasComponents
 {
 
-	private ExtTokenFieldServerRpc	serverRpc				= new ExtTokenFieldServerRpc()
-															{
+	private ExtTokenFieldServerRpc			serverRpc						= new ExtTokenFieldServerRpc()
+																			{
 
-																@Override
-																public void tokenDeleteClicked(Token token)
-																{
-																	removeToken(token);
-																}
-															};
+																				@Override
+																				public void tokenActionClicked(Token token, TokenAction tokenAction)
+																				{
+																					if (identifierToTokenizableAction.containsKey(tokenAction.identifier))
+																					{
+																						identifierToTokenizableAction.get(tokenAction.identifier).onClick(token);
+																					}
+																				}
+																			};
 
-	private Map<Long, Tokenizable>	identifierToTokenizable	= new HashMap<>();
+	private Map<Long, Tokenizable>			identifierToTokenizable			= new HashMap<>();
+	private Map<String, TokenizableAction>	identifierToTokenizableAction	= new HashMap<>();
 
 	public ExtTokenField()
 	{
@@ -62,6 +68,8 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 					throw new RuntimeException("no input field set");
 			}
 		});
+
+		addTokenAction(new DefaultDeleteTokenAction());
 	}
 
 	@Override
@@ -86,6 +94,35 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		result.id = value.getIdentifier();
 		result.value = value.getStringValue();
 		return result;
+	}
+
+	public void addTokenAction(TokenizableAction tokenizableAction)
+	{
+		for (TokenAction ta : getState().tokenActions)
+		{
+			if (ta.identifier.equals(tokenizableAction.getIdentifier()))
+			{
+				throw new RuntimeException("TokenAction identifier is not unique");
+			}
+		}
+
+		if (tokenizableAction.icon != null)
+		{
+			setResource(tokenizableAction.getIdentifier() + "-icon", tokenizableAction.icon);
+		}
+
+		TokenAction tokenAction = fromTokenizableActionToTokenAction(tokenizableAction);
+		identifierToTokenizableAction.put(tokenizableAction.getIdentifier(), tokenizableAction);
+		getState().tokenActions.add(tokenAction);
+	}
+
+	protected TokenAction fromTokenizableActionToTokenAction(TokenizableAction a)
+	{
+		TokenAction b = new TokenAction();
+		b.identifier = a.getIdentifier();
+		b.label = a.getLabel();
+		b.viewOrder = a.getViewOrder();
+		return b;
 	}
 
 	private void addToken(Token token)
@@ -178,5 +215,20 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	protected void fireComponentAttachEvent(Component component)
 	{
 		fireEvent(new ComponentAttachEvent(this, component));
+	}
+
+	public class DefaultDeleteTokenAction extends TokenizableAction
+	{
+
+		public DefaultDeleteTokenAction()
+		{
+			super(TokenAction.DELETE_TOKEN_ACTION_IDENTIFIER, Integer.MAX_VALUE, FontAwesome.MINUS_CIRCLE);
+		}
+
+		@Override
+		public void onClick(Token token)
+		{
+			ExtTokenField.this.removeToken(token);
+		}
 	}
 }

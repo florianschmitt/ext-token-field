@@ -16,7 +16,10 @@
 
 package com.explicatis.ext_token_field.client;
 
+import java.util.List;
+
 import com.explicatis.ext_token_field.shared.Token;
+import com.explicatis.ext_token_field.shared.TokenAction;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Element;
@@ -31,7 +34,7 @@ public class TokenWidget extends FocusPanel
 
 	public static final String	TOKEN_CLASS_NAME			= "token";
 	public static final String	TOKEN_LABEL_CLASS_NAME		= "token-label";
-	public static final String	TOKEN_REMOVE_CLASS_NAME		= "token-remove";
+	public static final String	TOKEN_ACTION_CLASS_NAME		= "token-remove";
 	public static final String	FOCUS_CLASS_NAME			= "focused";
 	public static final String	TOKEN_CONTENT_CLASS_NAME	= "token-content";
 
@@ -40,12 +43,13 @@ public class TokenWidget extends FocusPanel
 	protected boolean			isCollapsed					= true;
 	private int					cropLabelLength				= 20;
 	private final Token			token;
+	private FlowPanel			rootPanel;
 
-	public TokenWidget(Token token)
+	public TokenWidget(Token token, List<TokenAction> tokenActions)
 	{
 		this.token = token;
 
-		FlowPanel rootPanel = new FlowPanel();
+		rootPanel = new FlowPanel();
 		rootPanel.getElement().setClassName(TOKEN_CONTENT_CLASS_NAME);
 
 		final Element rootElement = getElement();
@@ -56,14 +60,42 @@ public class TokenWidget extends FocusPanel
 		label.addClickHandler(labelClickHandler());
 		rootPanel.add(label);
 
-		Anchor removeAnchor = new Anchor("×");
-		removeAnchor.getElement().setClassName(TOKEN_REMOVE_CLASS_NAME);
-		rootPanel.add(removeAnchor);
-
-		removeAnchor.addClickHandler(removeClickHandler());
+		buildTokenActions(tokenActions);
 
 		internalSetLabel();
 		add(rootPanel);
+	}
+
+	private void buildTokenActions(List<TokenAction> tokenActions)
+	{
+		if (tokenActions != null)
+			for (TokenAction a : tokenActions)
+			{
+				buildTokenAction(a);
+			}
+	}
+
+	private void buildTokenAction(final TokenAction action)
+	{
+		Anchor actionAnchor = new Anchor(action.label);
+		actionAnchor.getElement().setClassName(TOKEN_ACTION_CLASS_NAME);
+		rootPanel.add(actionAnchor);
+		actionAnchor.addClickHandler(new ClickHandler()
+		{
+
+			@Override
+			public void onClick(ClickEvent event)
+			{
+				onTokenActionClicked(action);
+			}
+		});
+
+		buildIcon(action, actionAnchor);
+	}
+
+	protected void buildIcon(final TokenAction action, final Anchor actionAnchor)
+	{
+
 	}
 
 	public Token getToken()
@@ -84,20 +116,7 @@ public class TokenWidget extends FocusPanel
 		};
 	}
 
-	protected ClickHandler removeClickHandler()
-	{
-		return new ClickHandler()
-		{
-
-			@Override
-			public void onClick(ClickEvent event)
-			{
-				onDeleteClicked();
-			}
-		};
-	}
-
-	protected void onDeleteClicked()
+	protected void onTokenActionClicked(TokenAction tokenAction)
 	{
 
 	}

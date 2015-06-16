@@ -34,7 +34,6 @@ public class ExtTokenFieldConnector extends AbstractComponentContainerConnector
 
 	public ExtTokenFieldConnector()
 	{
-		getWidget().setServerRpc(serverRpc);
 	}
 
 	@Override
@@ -52,7 +51,7 @@ public class ExtTokenFieldConnector extends AbstractComponentContainerConnector
 	@Override
 	protected void init()
 	{
-		super.init();
+		getWidget().setServerRpc(serverRpc);
 	}
 
 	@Override
@@ -70,6 +69,41 @@ public class ExtTokenFieldConnector extends AbstractComponentContainerConnector
 	public void onStateChanged(StateChangeEvent stateChangeEvent)
 	{
 		super.onStateChanged(stateChangeEvent);
+		getWidget().setApplicationConnection(getConnection());
+
+		for (TokenAction a : getState().tokenActions)
+		{
+			String resourceUrl = getResourceUrl(a.identifier + "-icon");
+			if (resourceUrl != null && !resourceUrl.isEmpty())
+			{
+				getWidget().setIconResourceUrl(a, resourceUrl);
+			}
+		}
+
 		getWidget().updateTokens(getState().tokens);
 	}
+
+	// @Override
+	// public boolean hasTooltip()
+	// {
+	// return true;
+	// }
+	//
+	// @Override
+	// public TooltipInfo getTooltipInfo(Element element)
+	// {
+	// TooltipInfo tooltipInfo = null;
+	// Widget w = WidgetUtil.findWidget(element, null);
+	// if (w instanceof HasTooltipKey)
+	// {
+	// tooltipInfo = GWT.create(TooltipInfo.class);
+	// String title = tooltips.get(((HasTooltipKey) w).getTooltipKey());
+	// tooltipInfo.setTitle(title != null ? title : "");
+	// }
+	// if (tooltipInfo == null)
+	// {
+	// tooltipInfo = super.getTooltipInfo(element);
+	// }
+	// return tooltipInfo;
+	// }
 }

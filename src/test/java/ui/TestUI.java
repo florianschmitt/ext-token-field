@@ -22,11 +22,13 @@ import java.util.List;
 import com.explicatis.ext_token_field.ExtTokenField;
 import com.explicatis.ext_token_field.SimpleTokenizable;
 import com.explicatis.ext_token_field.Tokenizable;
+import com.explicatis.ext_token_field.TokenizableAction;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
 import com.vaadin.data.Item;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
+import com.vaadin.server.FontAwesome;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.ui.ComboBox;
@@ -58,6 +60,7 @@ public class TestUI extends UI
 		mainLayout.addComponent(getTestLayout2());
 		mainLayout.addComponent(getTestLayout3());
 		mainLayout.addComponent(getTestLayout4());
+		mainLayout.addComponent(getTestLayout5());
 
 		setContent(mainLayout);
 	}
@@ -188,6 +191,52 @@ public class TestUI extends UI
 			}
 		});
 
+		result.setSizeFull();
+
+		return result;
+	}
+
+	private HorizontalLayout getTestLayout5()
+	{
+		HorizontalLayout result = new HorizontalLayout();
+
+		List<MyCustomBean> list = new LinkedList<>();
+		list.add(new MyCustomBean(1, "Wert 1"));
+		list.add(new MyCustomBean(2, "Wert 2"));
+		list.add(new MyCustomBean(3, "Wert 3"));
+		list.add(new MyCustomBean(4, "Wert 4"));
+
+		ComboBox combo = new ComboBox();
+		combo.setSizeFull();
+		combo.setDescription("TESTTESTTEST");
+		combo.setInputPrompt("Type here");
+
+		ExtTokenField tokenField = new ExtTokenField();
+
+		TokenizableAction b = new TokenizableAction("id1", FontAwesome.ADJUST)
+		{
+
+			public void onClick(com.explicatis.ext_token_field.shared.Token token)
+			{
+				Notification.show("clicked");
+			};
+		};
+		tokenField.addTokenAction(b);
+
+		tokenField.setSizeFull();
+		tokenField.setInputField(combo);
+		tokenField.setValue(list);
+		tokenField.addValueChangeListener(new ValueChangeListener()
+		{
+
+			@Override
+			public void valueChange(ValueChangeEvent event)
+			{
+				Notification.show("Value changed: " + printValue(tokenField.getValue()));
+			}
+		});
+
+		result.addComponent(tokenField);
 		result.setSizeFull();
 
 		return result;

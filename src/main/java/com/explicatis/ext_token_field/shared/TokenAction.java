@@ -16,10 +16,34 @@
 
 package com.explicatis.ext_token_field.shared;
 
-import com.vaadin.shared.communication.ServerRpc;
+import java.io.Serializable;
 
-public interface ExtTokenFieldServerRpc extends ServerRpc
+@SuppressWarnings("serial")
+public class TokenAction implements Serializable, Comparable<TokenAction>
 {
 
-	void tokenActionClicked(Token token, TokenAction tokenAction);
+	public static final String	DELETE_TOKEN_ACTION_IDENTIFIER	= "delete";
+
+	public String				identifier;
+	public String				label;
+	public int					viewOrder;
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (obj != null)
+		{
+			TokenAction other = (TokenAction) obj;
+			if (this.identifier != null)
+				return this.identifier.equals(other.identifier);
+		}
+		return false;
+	}
+
+	@Override
+	public int compareTo(TokenAction otherObject)
+	{
+		TokenAction thisObject = (TokenAction) this;
+		return Integer.compare(thisObject.viewOrder, otherObject.viewOrder);
+	}
 }

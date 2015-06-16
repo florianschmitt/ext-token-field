@@ -16,11 +16,16 @@
 
 package com.explicatis.ext_token_field.client;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.Token;
+import com.explicatis.ext_token_field.shared.TokenAction;
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.event.dom.client.BlurEvent;
@@ -30,8 +35,11 @@ import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
+import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.FlowPanel;
+import com.vaadin.client.ApplicationConnection;
 import com.vaadin.client.ComponentConnector;
+import com.vaadin.client.ui.Icon;
 import com.vaadin.client.ui.VFilterSelect;
 import com.vaadin.shared.Connector;
 
@@ -40,16 +48,40 @@ import elemental.events.KeyboardEvent.KeyCode;
 public class ExtTokenFieldWidget extends FlowPanel
 {
 
-	public static final String		TOKEN_FIELD_CLASS_NAME	= "exttokenfield";
+	public static final String			TOKEN_FIELD_CLASS_NAME	= "exttokenfield";
 
-	private List<TokenWidget>		tokenWidgets			= new LinkedList<>();
-	private ExtTokenFieldServerRpc	serverRpc;
-	private VFilterSelect			inputFilterSelect;
-	private Token					tokenToTheRight;
+	private List<TokenWidget>			tokenWidgets			= new LinkedList<>();
+	private ExtTokenFieldServerRpc		serverRpc;
+	private VFilterSelect				inputFilterSelect;
+	private Token						tokenToTheRight;
+	private List<TokenAction>			tokenActions;
+	private Map<TokenAction, String>	icons;
+	private ApplicationConnection		applicationConnection;
 
 	public ExtTokenFieldWidget()
 	{
 		getElement().setClassName(TOKEN_FIELD_CLASS_NAME);
+	}
+
+	public void setApplicationConnection(ApplicationConnection applicationConnection)
+	{
+		this.applicationConnection = applicationConnection;
+	}
+
+	public void setIconResourceUrl(TokenAction tokenAction, String url)
+	{
+		if (icons == null)
+		{
+			icons = new HashMap<>();
+		}
+		icons.put(tokenAction, url);
+	}
+
+	public void setTokenActions(Set<TokenAction> tokenActions)
+	{
+		List<TokenAction> sortedList = new LinkedList<>(tokenActions);
+		Collections.sort(sortedList);
+		this.tokenActions = sortedList;
 	}
 
 	public void setInputField(Connector inputField)
@@ -121,13 +153,23 @@ public class ExtTokenFieldWidget extends FlowPanel
 
 	protected TokenWidget buildTokenWidget(final Token token)
 	{
-		final TokenWidget widget = new TokenWidget(token)
+		final TokenWidget widget = new TokenWidget(token, tokenActions)
 		{
 
 			@Override
-			protected void onDeleteClicked()
+			protected void onTokenActionClicked(TokenAction tokenAction)
 			{
-				tokenDeleteScheduled(this);
+				tokenActionClicked(this, tokenAction);
+			}
+
+			@Override
+			protected void buildIcon(final TokenAction action, final Anchor actionAnchor)
+			{
+				if (icons != null && icons.containsKey(action))
+				{
+					Icon icon = applicationConnection.getIcon(icons.get(action));
+					actionAnchor.getElement().insertBefore(icon.getElement(), null);
+				}
 			}
 		};
 		widget.addFocusHandler(new FocusHandler()
@@ -166,22 +208,41 @@ public class ExtTokenFieldWidget extends FlowPanel
 				}
 				else if (event.getNativeKeyCode() == KeyCodes.KEY_DELETE || event.getNativeKeyCode() == KeyCodes.KEY_BACKSPACE)
 				{
-					tokenDeleteScheduled(widget);
+					TokenAction deleteTokenAction = findTokenAction(TokenAction.DELETE_TOKEN_ACTION_IDENTIFIER);
+					if (deleteTokenAction != null)
+					{
+						tokenActionClicked(widget, deleteTokenAction);
+					}
 				}
 			}
 		});
 		return widget;
 	}
 
-	protected void tokenDeleteScheduled(TokenWidget widget)
+	protected TokenAction findTokenAction(String identifier)
 	{
-		TokenWidget tokenWidgetToTheRight = getTokenToTheRight(widget);
-		if (tokenWidgetToTheRight != null)
+		for (TokenAction action : tokenActions)
 		{
-			tokenToTheRight = tokenWidgetToTheRight.getToken();
+			if (action.identifier.equals(identifier))
+			{
+				return action;
+			}
+		}
+		return null;
+	}
+
+	protected void tokenActionClicked(final TokenWidget widget, final TokenAction tokenAction)
+	{
+		if (tokenAction.identifier.equals(TokenAction.DELETE_TOKEN_ACTION_IDENTIFIER))
+		{
+			TokenWidget tokenWidgetToTheRight = getTokenToTheRight(widget);
+			if (tokenWidgetToTheRight != null)
+			{
+				tokenToTheRight = tokenWidgetToTheRight.getToken();
+			}
 		}
 
-		serverRpc.tokenDeleteClicked(widget.getToken());
+		serverRpc.tokenActionClicked(widget.getToken(), tokenAction);
 	}
 
 	protected void rightKeyDown(TokenWidget token)

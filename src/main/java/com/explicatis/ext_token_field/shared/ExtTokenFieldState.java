@@ -16,8 +16,10 @@
 
 package com.explicatis.ext_token_field.shared;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import com.vaadin.shared.AbstractFieldState;
 import com.vaadin.shared.Connector;
@@ -28,6 +30,8 @@ public class ExtTokenFieldState extends AbstractFieldState
 {
 
 	@DelegateToWidget
-	public Connector	inputField;
-	public List<Token>	tokens	= new LinkedList<Token>();
+	public Connector		inputField;
+	public List<Token>		tokens			= new LinkedList<Token>();
+	@DelegateToWidget
+	public Set<TokenAction>	tokenActions	= new HashSet<TokenAction>();
 }
