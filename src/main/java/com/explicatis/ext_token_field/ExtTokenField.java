@@ -18,6 +18,7 @@ package com.explicatis.ext_token_field;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -36,15 +37,17 @@ import com.vaadin.ui.HasComponents;
 public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> implements HasComponents// , Editor
 {
 
-	private ExtTokenFieldServerRpc	serverRpc	= new ExtTokenFieldServerRpc()
-												{
+	private ExtTokenFieldServerRpc	serverRpc				= new ExtTokenFieldServerRpc()
+															{
 
-													@Override
-													public void tokenDeleteClicked(Token token)
-													{
-														removeToken(token);
-													}
-												};
+																@Override
+																public void tokenDeleteClicked(Token token)
+																{
+																	removeToken(token);
+																}
+															};
+
+	private Map<Long, Tokenizable>	identifierToTokenizable	= new HashMap<>();
 
 	public ExtTokenField()
 	{
@@ -61,21 +64,19 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		});
 	}
 
-	private Map<Token, Tokenizable>	map	= new HashMap<>();
-
 	@Override
 	protected void setInternalValue(List<? extends Tokenizable> newValue)
 	{
 		super.setInternalValue(newValue);
 
 		removeAllToken();
-		map.clear();
+		identifierToTokenizable.clear();
 
 		for (Tokenizable t : newValue)
 		{
 			Token token = convertTokenizableToToken(t);
 			addToken(token);
-			map.put(token, t);
+			identifierToTokenizable.put(t.getIdentifier(), t);
 		}
 	}
 
@@ -96,10 +97,17 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	{
 		getState().tokens.remove(token);
 
-		Tokenizable tokenizable = map.get(token);
-		List<? extends Tokenizable> value2 = getValue();
-		value2.remove(tokenizable);
-		setValue(value2);
+		Tokenizable tokenizable = identifierToTokenizable.get(token.id);
+		List<? extends Tokenizable> internalValue = getInternalValue();
+		List<Tokenizable> newList = new LinkedList<>();
+		for (Tokenizable t : internalValue)
+		{
+			if (t.getIdentifier() != tokenizable.getIdentifier())
+			{
+				newList.add(t);
+			}
+		}
+		setValue(newList);
 	}
 
 	private void removeAllToken()

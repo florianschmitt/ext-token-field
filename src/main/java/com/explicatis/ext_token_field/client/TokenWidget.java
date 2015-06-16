@@ -29,15 +29,16 @@ import com.google.gwt.user.client.ui.Label;
 public class TokenWidget extends FocusPanel
 {
 
-	public static final String	TOKEN_CLASS_NAME		= "token";
-	public static final String	TOKEN_LABEL_CLASS_NAME	= "token-label";
-	public static final String	TOKEN_REMOVE_CLASS_NAME	= "token-remove";
-	public static final String	FOCUS_CLASS_NAME		= "focused";
+	public static final String	TOKEN_CLASS_NAME			= "token";
+	public static final String	TOKEN_LABEL_CLASS_NAME		= "token-label";
+	public static final String	TOKEN_REMOVE_CLASS_NAME		= "token-remove";
+	public static final String	FOCUS_CLASS_NAME			= "focused";
+	public static final String	TOKEN_CONTENT_CLASS_NAME	= "token-content";
 
 	private Label				label;
 
-	protected boolean			isCollapsed				= true;
-	private int					cropLabelLength			= 20;
+	protected boolean			isCollapsed					= true;
+	private int					cropLabelLength				= 20;
 	private final Token			token;
 
 	public TokenWidget(Token token)
@@ -45,6 +46,7 @@ public class TokenWidget extends FocusPanel
 		this.token = token;
 
 		FlowPanel rootPanel = new FlowPanel();
+		rootPanel.getElement().setClassName(TOKEN_CONTENT_CLASS_NAME);
 
 		final Element rootElement = getElement();
 		rootElement.setClassName(TOKEN_CLASS_NAME);

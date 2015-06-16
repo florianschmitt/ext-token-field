@@ -31,6 +31,7 @@ import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Notification;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
@@ -53,6 +54,17 @@ public class TestUI extends UI
 		mainLayout.setMargin(true);
 		mainLayout.setSpacing(true);
 
+		mainLayout.addComponent(getTestLayout1());
+		mainLayout.addComponent(getTestLayout2());
+		mainLayout.addComponent(getTestLayout3());
+		mainLayout.addComponent(getTestLayout4());
+
+		setContent(mainLayout);
+	}
+
+	private HorizontalLayout getTestLayout1()
+	{
+		HorizontalLayout result = new HorizontalLayout();
 		ComboBox b = new ComboBox();
 		b.setInputPrompt("Type here");
 		b.addContainerProperty("label", String.class, "");
@@ -85,13 +97,19 @@ public class TestUI extends UI
 					}
 					value.add(t);
 					f.setValue(value);
-					;
 				}
 			}
 		});
+		result.addComponent(f);
+		return result;
+	}
+
+	private HorizontalLayout getTestLayout2()
+	{
+		HorizontalLayout result = new HorizontalLayout();
 
 		ComboBox b2 = new ComboBox();
-		b2.setWidth(100, Unit.PERCENTAGE);
+		// b2.setWidth(100, Unit.PERCENTAGE);
 		b2.setInputPrompt("Type here");
 
 		ExtTokenField f2 = new ExtTokenField();
@@ -103,10 +121,8 @@ public class TestUI extends UI
 		list.add(new SimpleTokenizable(124l, "ein sehr sehr sehr sehr sehr sehr sehr sehr sehr sehr langer Text"));
 
 		f2.setValue(list);
-
-		mainLayout.addComponent(getTestLayout3());
-
-		setContent(mainLayout);
+		result.addComponent(f2);
+		return result;
 	}
 
 	private HorizontalLayout getTestLayout3()
@@ -128,6 +144,72 @@ public class TestUI extends UI
 
 		tokenField.setValue(list);
 
+		tokenField.addValueChangeListener(new ValueChangeListener()
+		{
+
+			@Override
+			public void valueChange(ValueChangeEvent event)
+			{
+				Notification.show("Value changed: " + printValue(tokenField.getValue()));
+			}
+		});
+
 		return result;
+	}
+
+	private HorizontalLayout getTestLayout4()
+	{
+		HorizontalLayout result = new HorizontalLayout();
+
+		List<MyCustomBean> list = new LinkedList<>();
+		list.add(new MyCustomBean(1, "Wert 1"));
+		list.add(new MyCustomBean(2, "Wert 2"));
+		list.add(new MyCustomBean(3, "Wert 3"));
+		list.add(new MyCustomBean(4, "Wert 4"));
+
+		ComboBox combo = new ComboBox();
+		combo.setSizeFull();
+		combo.setInputPrompt("Type here");
+
+		ExtTokenField tokenField = new ExtTokenField();
+		tokenField.setSizeFull();
+		tokenField.setInputField(combo);
+		result.addComponent(tokenField);
+
+		tokenField.setValue(list);
+
+		tokenField.addValueChangeListener(new ValueChangeListener()
+		{
+
+			@Override
+			public void valueChange(ValueChangeEvent event)
+			{
+				Notification.show("Value changed: " + printValue(tokenField.getValue()));
+			}
+		});
+
+		result.setSizeFull();
+
+		return result;
+	}
+
+	private String printValue(List<? extends Tokenizable> list)
+	{
+		StringBuilder result = new StringBuilder();
+		if (list != null)
+		{
+			result.append("[");
+
+			for (Tokenizable t : list)
+			{
+				result.append(String.format("(%d, %s)", t.getIdentifier(), t.getStringValue()));
+			}
+
+			result.append("]");
+
+			return result.toString();
+		}
+
+		return "null";
 	}
 }
