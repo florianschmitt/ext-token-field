@@ -16,12 +16,12 @@
 
 package com.explicatis.ext_token_field;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldState;
@@ -52,8 +52,8 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 																				}
 																			};
 
-	private Map<Long, Tokenizable>			identifierToTokenizable			= new HashMap<>();
-	private Map<String, TokenizableAction>	identifierToTokenizableAction	= new HashMap<>();
+	private Map<Long, Tokenizable>			identifierToTokenizable			= new HashMap<Long, Tokenizable>();
+	private Map<String, TokenizableAction>	identifierToTokenizableAction	= new HashMap<String, TokenizableAction>();
 
 	public ExtTokenField()
 	{
@@ -136,7 +136,7 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 
 		Tokenizable tokenizable = identifierToTokenizable.get(token.id);
 		List<? extends Tokenizable> internalValue = getInternalValue();
-		List<Tokenizable> newList = new LinkedList<>();
+		List<Tokenizable> newList = new LinkedList<Tokenizable>();
 		for (Tokenizable t : internalValue)
 		{
 			if (t.getIdentifier() != tokenizable.getIdentifier())
@@ -174,14 +174,15 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	{
 		if (getInputField() == null)
 			return Iterators.emptyIterator();
-		return Stream.of((Component) getInputField()).iterator();
+
+		return new ComponentIterator();
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
 	public Class<? extends List<? extends Tokenizable>> getType()
 	{
-		return (Class<? extends List<? extends Tokenizable>>) List.class;
+		return (Class) List.class;
 	}
 
 	/**
@@ -215,6 +216,31 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	protected void fireComponentAttachEvent(Component component)
 	{
 		fireEvent(new ComponentAttachEvent(this, component));
+	}
+
+	private class ComponentIterator implements Iterator<Component>, Serializable
+	{
+
+		boolean	first	= (getInputField() != null);
+
+		@Override
+		public boolean hasNext()
+		{
+			return first;
+		}
+
+		@Override
+		public Component next()
+		{
+			first = false;
+			return getInputField();
+		}
+
+		@Override
+		public void remove()
+		{
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	public class DefaultDeleteTokenAction extends TokenizableAction

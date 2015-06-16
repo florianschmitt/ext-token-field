@@ -50,7 +50,7 @@ public class ExtTokenFieldWidget extends FlowPanel
 
 	public static final String			TOKEN_FIELD_CLASS_NAME	= "exttokenfield";
 
-	private List<TokenWidget>			tokenWidgets			= new LinkedList<>();
+	private List<TokenWidget>			tokenWidgets			= new LinkedList<TokenWidget>();
 	private ExtTokenFieldServerRpc		serverRpc;
 	private VFilterSelect				inputFilterSelect;
 	private Token						tokenToTheRight;
@@ -72,14 +72,14 @@ public class ExtTokenFieldWidget extends FlowPanel
 	{
 		if (icons == null)
 		{
-			icons = new HashMap<>();
+			icons = new HashMap<TokenAction, String>();
 		}
 		icons.put(tokenAction, url);
 	}
 
 	public void setTokenActions(Set<TokenAction> tokenActions)
 	{
-		List<TokenAction> sortedList = new LinkedList<>(tokenActions);
+		List<TokenAction> sortedList = new LinkedList<TokenAction>(tokenActions);
 		Collections.sort(sortedList);
 		this.tokenActions = sortedList;
 	}
