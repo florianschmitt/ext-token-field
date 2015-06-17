@@ -23,6 +23,10 @@ import com.explicatis.ext_token_field.ExtTokenField;
 import com.explicatis.ext_token_field.SimpleTokenizable;
 import com.explicatis.ext_token_field.Tokenizable;
 import com.explicatis.ext_token_field.TokenizableAction;
+import com.explicatis.ext_token_field.events.TokenAddedEvent;
+import com.explicatis.ext_token_field.events.TokenAddedListener;
+import com.explicatis.ext_token_field.events.TokenRemovedEvent;
+import com.explicatis.ext_token_field.events.TokenRemovedListener;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
 import com.vaadin.data.Item;
@@ -92,14 +96,15 @@ public class TestUI extends UI
 					String string = (String) item.getItemProperty("label").getValue();
 
 					SimpleTokenizable t = new SimpleTokenizable(1, string);
-					@SuppressWarnings("unchecked")
-					List<Tokenizable> value = (List<Tokenizable>) f.getValue();
-					if (value == null)
-					{
-						value = new LinkedList<>();
-					}
-					value.add(t);
-					f.setValue(value);
+					f.addTokenizable(t);
+					// @SuppressWarnings("unchecked")
+					// List<Tokenizable> value = (List<Tokenizable>) f.getValue();
+					// if (value == null)
+					// {
+					// value = new LinkedList<>();
+					// }
+					// value.add(t);
+					// f.setValue(value);
 				}
 			}
 		});
@@ -133,27 +138,66 @@ public class TestUI extends UI
 		HorizontalLayout result = new HorizontalLayout();
 
 		List<MyCustomBean> list = new LinkedList<>();
-		list.add(new MyCustomBean(1, "Wert 1"));
-		list.add(new MyCustomBean(2, "Wert 2"));
-		list.add(new MyCustomBean(3, "Wert 3"));
-		list.add(new MyCustomBean(4, "Wert 4"));
+		list.add(new MyCustomBean(111, "Wert 1"));
+		list.add(new MyCustomBean(112, "Wert 2"));
+		list.add(new MyCustomBean(113, "Wert 3"));
+		list.add(new MyCustomBean(114, "Wert 4 asdf"));
 
 		ComboBox combo = new ComboBox();
+		combo.setNullSelectionAllowed(false);
 		combo.setInputPrompt("Type here");
+		combo.addContainerProperty("label", String.class, "");
+		Object addItem = combo.addItem();
+		combo.getItem(addItem).getItemProperty("label").setValue("Test 1");
+		addItem = combo.addItem();
+		combo.getItem(addItem).getItemProperty("label").setValue("Test 2");
+		addItem = combo.addItem();
+		combo.getItem(addItem).getItemProperty("label").setValue("Test 3");
+		combo.setItemCaptionPropertyId("label");
 
 		ExtTokenField tokenField = new ExtTokenField();
 		tokenField.setInputField(combo);
 		result.addComponent(tokenField);
-
 		tokenField.setValue(list);
 
-		tokenField.addValueChangeListener(new ValueChangeListener()
+		combo.addValueChangeListener(new ValueChangeListener()
 		{
 
 			@Override
 			public void valueChange(ValueChangeEvent event)
 			{
-				Notification.show("Value changed: " + printValue(tokenField.getValue()));
+				Object id = event.getProperty().getValue();
+				if (id != null)
+				{
+					Item item = combo.getItem(id);
+					String string = (String) item.getItemProperty("label").getValue();
+
+					int intId = (int) id;
+
+					SimpleTokenizable t = new SimpleTokenizable((long) intId, string);
+					tokenField.addTokenizable(t);
+					combo.setValue(null);
+				}
+			}
+		});
+
+		tokenField.addTokenAddedListener(new TokenAddedListener()
+		{
+
+			@Override
+			public void tokenAddedEvent(TokenAddedEvent event)
+			{
+				Notification.show("Token added: " + event.getTokenizable().getStringValue());
+			}
+		});
+
+		tokenField.addTokenRemovedListener(new TokenRemovedListener()
+		{
+
+			@Override
+			public void tokenRemovedEvent(TokenRemovedEvent event)
+			{
+				Notification.show("Token removed: " + event.getTokenizable().getStringValue());
 			}
 		});
 

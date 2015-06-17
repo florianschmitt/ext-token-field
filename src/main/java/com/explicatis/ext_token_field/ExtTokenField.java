@@ -17,12 +17,17 @@
 package com.explicatis.ext_token_field;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.explicatis.ext_token_field.events.TokenAddedEvent;
+import com.explicatis.ext_token_field.events.TokenAddedListener;
+import com.explicatis.ext_token_field.events.TokenRemovedEvent;
+import com.explicatis.ext_token_field.events.TokenRemovedListener;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldState;
 import com.explicatis.ext_token_field.shared.Token;
@@ -77,15 +82,17 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	{
 		super.setInternalValue(newValue);
 
-		removeAllToken();
 		identifierToTokenizable.clear();
+		List<Token> newList = new ArrayList<Token>();
 
 		for (Tokenizable t : newValue)
 		{
 			Token token = convertTokenizableToToken(t);
-			addToken(token);
 			identifierToTokenizable.put(t.getIdentifier(), t);
+			newList.add(token);
 		}
+
+		getState().tokens = newList;
 	}
 
 	protected Token convertTokenizableToToken(Tokenizable value)
@@ -125,6 +132,29 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		return b;
 	}
 
+	public void addTokenizable(Tokenizable tokenizable)
+	{
+		if (identifierToTokenizable.keySet().contains(tokenizable.getIdentifier()))
+		{
+			return;
+		}
+
+		Token token = convertTokenizableToToken(tokenizable);
+		identifierToTokenizable.put(tokenizable.getIdentifier(), tokenizable);
+		addToken(token);
+
+		@SuppressWarnings("unchecked")
+		List<Tokenizable> currentValue = (List<Tokenizable>) getValue();
+		if (currentValue == null)
+		{
+			currentValue = new LinkedList<Tokenizable>();
+		}
+		currentValue.add(tokenizable);
+		setValue(currentValue);
+
+		fireEvent(new TokenAddedEvent(this, tokenizable));
+	}
+
 	private void addToken(Token token)
 	{
 		getState().tokens.add(token);
@@ -135,6 +165,7 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		getState().tokens.remove(token);
 
 		Tokenizable tokenizable = identifierToTokenizable.get(token.id);
+
 		List<? extends Tokenizable> internalValue = getInternalValue();
 		List<Tokenizable> newList = new LinkedList<Tokenizable>();
 		for (Tokenizable t : internalValue)
@@ -144,12 +175,10 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 				newList.add(t);
 			}
 		}
+		identifierToTokenizable.remove(token.id);
 		setValue(newList);
-	}
 
-	private void removeAllToken()
-	{
-		getState().tokens.clear();
+		fireEvent(new TokenRemovedEvent(this, tokenizable));
 	}
 
 	public void setInputField(ComboBox field)
@@ -183,6 +212,26 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	public Class<? extends List<? extends Tokenizable>> getType()
 	{
 		return (Class) List.class;
+	}
+
+	public void addTokenAddedListener(TokenAddedListener listener)
+	{
+		addListener(TokenAddedEvent.class, listener, TokenAddedEvent.EVENT_METHOD);
+	}
+
+	public void removeTokenAddedListener(TokenAddedListener listener)
+	{
+		removeListener(TokenAddedEvent.class, listener, TokenAddedEvent.EVENT_METHOD);
+	}
+
+	public void addTokenRemovedListener(TokenRemovedListener listener)
+	{
+		addListener(TokenRemovedEvent.class, listener, TokenRemovedEvent.EVENT_METHOD);
+	}
+
+	public void removeTokenRemovedListener(TokenRemovedListener listener)
+	{
+		removeListener(TokenRemovedEvent.class, listener, TokenRemovedEvent.EVENT_METHOD);
 	}
 
 	/**
