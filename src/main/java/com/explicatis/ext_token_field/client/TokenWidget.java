@@ -33,8 +33,8 @@ public class TokenWidget extends FocusPanel
 {
 
 	public static final String	TOKEN_CLASS_NAME			= "token";
+	public static final String	TOKEN_ACTION_CLASS_NAME		= "token-action";
 	public static final String	TOKEN_LABEL_CLASS_NAME		= "token-label";
-	public static final String	TOKEN_ACTION_CLASS_NAME		= "token-remove";
 	public static final String	FOCUS_CLASS_NAME			= "focused";
 	public static final String	TOKEN_CONTENT_CLASS_NAME	= "token-content";
 

@@ -16,7 +16,6 @@
 
 package com.explicatis.ext_token_field;
 
-import com.explicatis.ext_token_field.shared.Token;
 import com.vaadin.server.Resource;
 
 public class TokenizableAction
@@ -57,7 +56,7 @@ public class TokenizableAction
 		this.icon = resource;
 	}
 
-	public void onClick(Token token)
+	public void onClick(Tokenizable tokenizable)
 	{
 
 	}

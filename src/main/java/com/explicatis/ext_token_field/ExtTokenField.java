@@ -52,7 +52,8 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 																				{
 																					if (identifierToTokenizableAction.containsKey(tokenAction.identifier))
 																					{
-																						identifierToTokenizableAction.get(tokenAction.identifier).onClick(token);
+																						Tokenizable tokenizable = identifierToTokenizable.get(token.id);
+																						identifierToTokenizableAction.get(tokenAction.identifier).onClick(tokenizable);
 																					}
 																				}
 																			};
@@ -155,17 +156,10 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		fireEvent(new TokenAddedEvent(this, tokenizable));
 	}
 
-	private void addToken(Token token)
+	public void removeTokenizable(Tokenizable tokenizable)
 	{
-		getState().tokens.add(token);
-	}
-
-	private void removeToken(Token token)
-	{
-		getState().tokens.remove(token);
-
-		Tokenizable tokenizable = identifierToTokenizable.get(token.id);
-
+		Token token = findTokenByTokenizable(tokenizable);
+		removeToken(token);
 		List<? extends Tokenizable> internalValue = getInternalValue();
 		List<Tokenizable> newList = new LinkedList<Tokenizable>();
 		for (Tokenizable t : internalValue)
@@ -179,6 +173,28 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		setValue(newList);
 
 		fireEvent(new TokenRemovedEvent(this, tokenizable));
+	}
+
+	protected Token findTokenByTokenizable(Tokenizable tokenizable)
+	{
+		for (Token token : getState().tokens)
+		{
+			if (token.id == tokenizable.getIdentifier())
+			{
+				return token;
+			}
+		}
+		return null;
+	}
+
+	private void addToken(Token token)
+	{
+		getState().tokens.add(token);
+	}
+
+	private void removeToken(Token token)
+	{
+		getState().tokens.remove(token);
 	}
 
 	public void setInputField(ComboBox field)
@@ -212,6 +228,20 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	public Class<? extends List<? extends Tokenizable>> getType()
 	{
 		return (Class) List.class;
+	}
+
+	@Override
+	public void setReadOnly(boolean readOnly)
+	{
+		super.setReadOnly(readOnly);
+		getInputField().setVisible(readOnly);
+	}
+
+	@Override
+	public void setEnabled(boolean enabled)
+	{
+		super.setEnabled(enabled);
+		getInputField().setVisible(enabled);
 	}
 
 	public void addTokenAddedListener(TokenAddedListener listener)
@@ -301,9 +331,9 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		}
 
 		@Override
-		public void onClick(Token token)
+		public void onClick(Tokenizable tokenizable)
 		{
-			ExtTokenField.this.removeToken(token);
+			ExtTokenField.this.removeTokenizable(tokenizable);
 		}
 	}
 }

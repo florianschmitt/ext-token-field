@@ -35,7 +35,7 @@
 	border-color: red;
 }
 
-.v-widget.exttokenfield	.token .token-remove {
+.v-widget.exttokenfield	.token .token-action {
 	padding-left: 6px;
 	text-decoration: none;
 }
