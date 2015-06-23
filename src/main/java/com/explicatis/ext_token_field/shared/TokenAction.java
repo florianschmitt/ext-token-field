@@ -27,6 +27,7 @@ public class TokenAction implements Serializable, Comparable<TokenAction>
 	public String				identifier;
 	public String				label;
 	public int					viewOrder;
+	public boolean				inheritsReadOnlyAndEnabled		= true;
 
 	@Override
 	public boolean equals(Object obj)

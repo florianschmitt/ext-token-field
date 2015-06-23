@@ -22,9 +22,10 @@ public class TokenizableAction
 {
 
 	private final String	identifier;
-	private String			label	= "";
+	private String			label						= "";
 	private int				viewOrder;
 	public Resource			icon;
+	private boolean			inheritsReadOnlyAndEnabled	= true;
 
 	public TokenizableAction(String identifier, String label)
 	{
@@ -84,5 +85,15 @@ public class TokenizableAction
 	public int getViewOrder()
 	{
 		return viewOrder;
+	}
+
+	public boolean getInheritsReadOnlyAndEnabled()
+	{
+		return inheritsReadOnlyAndEnabled;
+	}
+
+	public void setInheritsReadOnlyAndEnabled(boolean value)
+	{
+		this.inheritsReadOnlyAndEnabled = value;
 	}
 }

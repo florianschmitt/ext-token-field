@@ -31,6 +31,8 @@ public class ExtTokenFieldState extends AbstractFieldState
 
 	@DelegateToWidget
 	public Connector		inputField;
+	@DelegateToWidget
+	public Connector		inputButton;
 	public List<Token>		tokens			= new LinkedList<Token>();
 	@DelegateToWidget
 	public Set<TokenAction>	tokenActions	= new HashSet<TokenAction>();

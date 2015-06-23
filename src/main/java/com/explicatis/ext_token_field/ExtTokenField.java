@@ -36,6 +36,7 @@ import com.google.gwt.thirdparty.guava.common.collect.Iterators;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.ui.AbstractField;
 import com.vaadin.ui.AbstractSingleComponentContainer;
+import com.vaadin.ui.Button;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.HasComponents;
@@ -70,8 +71,8 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 			@Override
 			public void attach(AttachEvent event)
 			{
-				if (getInputField() == null)
-					throw new RuntimeException("no input field set");
+				if (!hasInputButton() && !hasInputField())
+					throw new RuntimeException("no input field nor input button set");
 			}
 		});
 
@@ -130,6 +131,7 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		b.identifier = a.getIdentifier();
 		b.label = a.getLabel();
 		b.viewOrder = a.getViewOrder();
+		b.inheritsReadOnlyAndEnabled = a.getInheritsReadOnlyAndEnabled();
 		return b;
 	}
 
@@ -203,9 +205,30 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		getState().inputField = field;
 	}
 
+	public void setInputButton(Button button)
+	{
+		addComponent(button);
+		getState().inputButton = button;
+	}
+
+	public boolean hasInputField()
+	{
+		return getInputField() != null;
+	}
+
+	public boolean hasInputButton()
+	{
+		return getInputButton() != null;
+	}
+
 	public ComboBox getInputField()
 	{
 		return (ComboBox) getState().inputField;
+	}
+
+	public Button getInputButton()
+	{
+		return (Button) getState().inputButton;
 	}
 
 	@Override
@@ -217,7 +240,7 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	@Override
 	public Iterator<Component> iterator()
 	{
-		if (getInputField() == null)
+		if (getInputField() == null && getInputButton() == null)
 			return Iterators.emptyIterator();
 
 		return new ComponentIterator();
@@ -234,14 +257,20 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	public void setReadOnly(boolean readOnly)
 	{
 		super.setReadOnly(readOnly);
-		getInputField().setVisible(readOnly);
+		if (hasInputField())
+			getInputField().setVisible(readOnly);
+		else if (hasInputButton())
+			getInputButton().setVisible(readOnly);
 	}
 
 	@Override
 	public void setEnabled(boolean enabled)
 	{
 		super.setEnabled(enabled);
-		getInputField().setVisible(enabled);
+		if (hasInputField())
+			getInputField().setVisible(enabled);
+		else if (hasInputButton())
+			getInputButton().setVisible(enabled);
 	}
 
 	public void addTokenAddedListener(TokenAddedListener listener)
@@ -300,7 +329,7 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	private class ComponentIterator implements Iterator<Component>, Serializable
 	{
 
-		boolean	first	= (getInputField() != null);
+		boolean	first	= (hasInputButton()) || (hasInputField());
 
 		@Override
 		public boolean hasNext()
@@ -312,7 +341,11 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		public Component next()
 		{
 			first = false;
-			return getInputField();
+			if (hasInputField())
+				return getInputField();
+			else if (hasInputButton())
+				return getInputButton();
+			return null;
 		}
 
 		@Override

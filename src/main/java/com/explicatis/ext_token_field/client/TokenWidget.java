@@ -32,21 +32,23 @@ import com.google.gwt.user.client.ui.Label;
 public class TokenWidget extends FocusPanel
 {
 
-	public static final String	TOKEN_CLASS_NAME			= "token";
-	public static final String	TOKEN_ACTION_CLASS_NAME		= "token-action";
-	public static final String	TOKEN_LABEL_CLASS_NAME		= "token-label";
-	public static final String	FOCUS_CLASS_NAME			= "focused";
-	public static final String	TOKEN_CONTENT_CLASS_NAME	= "token-content";
+	public static final String			TOKEN_CLASS_NAME			= "token";
+	public static final String			TOKEN_ACTION_CLASS_NAME		= "token-action";
+	public static final String			TOKEN_LABEL_CLASS_NAME		= "token-label";
+	public static final String			FOCUS_CLASS_NAME			= "focused";
+	public static final String			TOKEN_CONTENT_CLASS_NAME	= "token-content";
 
-	private Label				label;
+	private Label						label;
 
-	protected boolean			isCollapsed					= true;
-	private int					cropLabelLength				= 20;
-	private final Token			token;
-	private FlowPanel			rootPanel;
+	protected boolean					isCollapsed					= true;
+	private int							cropLabelLength				= 20;
+	private final Token					token;
+	private FlowPanel					rootPanel;
+	private final ExtTokenFieldWidget	extTokenField;
 
-	public TokenWidget(Token token, List<TokenAction> tokenActions)
+	public TokenWidget(final ExtTokenFieldWidget extTokenField, Token token, List<TokenAction> tokenActions)
 	{
+		this.extTokenField = extTokenField;
 		this.token = token;
 
 		rootPanel = new FlowPanel();
@@ -77,20 +79,23 @@ public class TokenWidget extends FocusPanel
 
 	private void buildTokenAction(final TokenAction action)
 	{
-		Anchor actionAnchor = new Anchor(action.label);
-		actionAnchor.getElement().setClassName(TOKEN_ACTION_CLASS_NAME);
-		rootPanel.add(actionAnchor);
-		actionAnchor.addClickHandler(new ClickHandler()
+		if ((action.inheritsReadOnlyAndEnabled && !extTokenField.isReadOnly() && extTokenField.isEnabled()) || !action.inheritsReadOnlyAndEnabled)
 		{
-
-			@Override
-			public void onClick(ClickEvent event)
+			Anchor actionAnchor = new Anchor(action.label);
+			actionAnchor.getElement().setClassName(TOKEN_ACTION_CLASS_NAME);
+			rootPanel.add(actionAnchor);
+			actionAnchor.addClickHandler(new ClickHandler()
 			{
-				onTokenActionClicked(action);
-			}
-		});
 
-		buildIcon(action, actionAnchor);
+				@Override
+				public void onClick(ClickEvent event)
+				{
+					onTokenActionClicked(action);
+				}
+			});
+
+			buildIcon(action, actionAnchor);
+		}
 	}
 
 	protected void buildIcon(final TokenAction action, final Anchor actionAnchor)

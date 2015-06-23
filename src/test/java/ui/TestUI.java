@@ -35,6 +35,9 @@ import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
+import com.vaadin.ui.Button;
+import com.vaadin.ui.Button.ClickEvent;
+import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Notification;
@@ -65,6 +68,8 @@ public class TestUI extends UI
 		mainLayout.addComponent(getTestLayout3());
 		mainLayout.addComponent(getTestLayout4());
 		mainLayout.addComponent(getTestLayout5());
+		mainLayout.addComponent(getTestLayout6());
+		mainLayout.addComponent(getTestLayout7());
 
 		setContent(mainLayout);
 	}
@@ -97,6 +102,7 @@ public class TestUI extends UI
 
 					SimpleTokenizable t = new SimpleTokenizable(1, string);
 					f.addTokenizable(t);
+					b.setValue(null);
 					// @SuppressWarnings("unchecked")
 					// List<Tokenizable> value = (List<Tokenizable>) f.getValue();
 					// if (value == null)
@@ -280,6 +286,78 @@ public class TestUI extends UI
 			}
 		});
 
+		result.addComponent(tokenField);
+		result.setSizeFull();
+
+		return result;
+	}
+
+	private HorizontalLayout getTestLayout6()
+	{
+		HorizontalLayout result = new HorizontalLayout();
+
+		List<MyCustomBean> list = new LinkedList<>();
+		list.add(new MyCustomBean(1, "Wert 1"));
+		list.add(new MyCustomBean(2, "Wert 2"));
+		list.add(new MyCustomBean(3, "Wert 3"));
+		list.add(new MyCustomBean(4, "Wert 4"));
+
+		ComboBox combo = new ComboBox();
+		combo.setSizeFull();
+		combo.setDescription("TESTTESTTEST");
+		combo.setInputPrompt("Type here");
+
+		ExtTokenField tokenField = new ExtTokenField();
+
+		TokenizableAction b = new TokenizableAction("id1", FontAwesome.ADJUST)
+		{
+
+			@Override
+			public void onClick(com.explicatis.ext_token_field.Tokenizable token)
+			{
+				Notification.show("clicked");
+			};
+		};
+		b.setInheritsReadOnlyAndEnabled(false);
+		tokenField.addTokenAction(b);
+		tokenField.setSizeFull();
+		tokenField.setInputField(combo);
+		tokenField.setValue(list);
+		tokenField.setReadOnly(true);
+		result.addComponent(tokenField);
+		result.setSizeFull();
+
+		return result;
+	}
+
+	private HorizontalLayout getTestLayout7()
+	{
+		HorizontalLayout result = new HorizontalLayout();
+
+		List<MyCustomBean> list = new LinkedList<>();
+		list.add(new MyCustomBean(1, "Wert 1"));
+		list.add(new MyCustomBean(2, "Wert 2"));
+		list.add(new MyCustomBean(3, "Wert 3"));
+		list.add(new MyCustomBean(4, "Wert 4"));
+
+		ExtTokenField tokenField = new ExtTokenField();
+
+		tokenField.setSizeFull();
+		Button add = new Button();
+		add.setCaption("add element");
+		add.setIcon(FontAwesome.PLUS_CIRCLE);
+		add.addStyleName(ValoTheme.BUTTON_BORDERLESS);
+		add.addClickListener(new ClickListener()
+		{
+
+			@Override
+			public void buttonClick(ClickEvent event)
+			{
+				Notification.show("add clicked");
+			}
+		});
+		tokenField.setInputButton(add);
+		tokenField.setValue(list);
 		result.addComponent(tokenField);
 		result.setSizeFull();
 

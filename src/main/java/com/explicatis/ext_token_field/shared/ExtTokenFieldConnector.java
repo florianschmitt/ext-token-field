@@ -65,6 +65,7 @@ public class ExtTokenFieldConnector extends AbstractComponentContainerConnector
 	{
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void onStateChanged(StateChangeEvent stateChangeEvent)
 	{
@@ -80,6 +81,7 @@ public class ExtTokenFieldConnector extends AbstractComponentContainerConnector
 			}
 		}
 
+		getWidget().setReadOnly(isReadOnly());
 		getWidget().updateTokens(getState().tokens);
 	}
 

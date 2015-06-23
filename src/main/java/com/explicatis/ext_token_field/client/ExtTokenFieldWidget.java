@@ -37,15 +37,17 @@ import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.HasEnabled;
 import com.vaadin.client.ApplicationConnection;
 import com.vaadin.client.ComponentConnector;
 import com.vaadin.client.ui.Icon;
+import com.vaadin.client.ui.VButton;
 import com.vaadin.client.ui.VFilterSelect;
 import com.vaadin.shared.Connector;
 
 import elemental.events.KeyboardEvent.KeyCode;
 
-public class ExtTokenFieldWidget extends FlowPanel
+public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 {
 
 	public static final String			TOKEN_FIELD_CLASS_NAME	= "exttokenfield";
@@ -53,10 +55,13 @@ public class ExtTokenFieldWidget extends FlowPanel
 	private List<TokenWidget>			tokenWidgets			= new LinkedList<TokenWidget>();
 	private ExtTokenFieldServerRpc		serverRpc;
 	private VFilterSelect				inputFilterSelect;
+	private VButton						inputButton;
 	private Token						tokenToTheRight;
 	private List<TokenAction>			tokenActions;
 	private Map<TokenAction, String>	icons;
 	private ApplicationConnection		applicationConnection;
+	private boolean						isReadOnly				= false;
+	private boolean						isEnabled				= true;
 
 	public ExtTokenFieldWidget()
 	{
@@ -84,6 +89,16 @@ public class ExtTokenFieldWidget extends FlowPanel
 		this.tokenActions = sortedList;
 	}
 
+	public void setInputButton(Connector inputButton)
+	{
+		if (inputButton != null)
+		{
+			this.inputButton = (VButton) ((ComponentConnector) inputButton).getWidget();
+			this.inputButton.addKeyDownHandler(initKeyDownHandler());
+			add(this.inputButton);
+		}
+	}
+
 	public void setInputField(Connector inputField)
 	{
 		if (inputField != null)
@@ -94,23 +109,28 @@ public class ExtTokenFieldWidget extends FlowPanel
 			 * 
 			 * TODO: more work to do... make sure suggestion box is closed etc.
 			 */
-			inputFilterSelect.tb.addKeyDownHandler(new KeyDownHandler()
-			{
-
-				@Override
-				public void onKeyDown(KeyDownEvent event)
-				{
-					if (event.getNativeKeyCode() == KeyCode.LEFT)
-					{
-						if (ExtTokenFieldWidget.this.tokenWidgets.size() > 0)
-						{
-							tokenWidgets.get(tokenWidgets.size() - 1).setFocus(true);
-						}
-					}
-				}
-			});
+			inputFilterSelect.tb.addKeyDownHandler(initKeyDownHandler());
 			add(inputFilterSelect);
 		}
+	}
+
+	private KeyDownHandler initKeyDownHandler()
+	{
+		return new KeyDownHandler()
+		{
+
+			@Override
+			public void onKeyDown(KeyDownEvent event)
+			{
+				if (event.getNativeKeyCode() == KeyCode.LEFT)
+				{
+					if (ExtTokenFieldWidget.this.tokenWidgets.size() > 0)
+					{
+						tokenWidgets.get(tokenWidgets.size() - 1).setFocus(true);
+					}
+				}
+			}
+		};
 	}
 
 	public void updateTokens(List<Token> tokens)
@@ -145,7 +165,10 @@ public class ExtTokenFieldWidget extends FlowPanel
 				@Override
 				public void execute()
 				{
-					inputFilterSelect.tb.setFocus(true);
+					if (inputFilterSelect != null)
+						inputFilterSelect.tb.setFocus(true);
+					else if (inputButton != null)
+						inputButton.setFocus(true);
 				}
 			});
 		}
@@ -153,7 +176,7 @@ public class ExtTokenFieldWidget extends FlowPanel
 
 	protected TokenWidget buildTokenWidget(final Token token)
 	{
-		final TokenWidget widget = new TokenWidget(token, tokenActions)
+		final TokenWidget widget = new TokenWidget(this, token, tokenActions)
 		{
 
 			@Override
@@ -211,7 +234,10 @@ public class ExtTokenFieldWidget extends FlowPanel
 					TokenAction deleteTokenAction = findTokenAction(TokenAction.DELETE_TOKEN_ACTION_IDENTIFIER);
 					if (deleteTokenAction != null)
 					{
-						tokenActionClicked(widget, deleteTokenAction);
+						if (isEnabled() && !isReadOnly())
+						{
+							tokenActionClicked(widget, deleteTokenAction);
+						}
 					}
 				}
 			}
@@ -255,7 +281,10 @@ public class ExtTokenFieldWidget extends FlowPanel
 		}
 		else
 		{
-			inputFilterSelect.tb.setFocus(true);
+			if (inputFilterSelect != null)
+				inputFilterSelect.tb.setFocus(true);
+			else if (inputButton != null)
+				inputButton.setFocus(true);
 		}
 	}
 
@@ -338,5 +367,37 @@ public class ExtTokenFieldWidget extends FlowPanel
 	public void setServerRpc(ExtTokenFieldServerRpc serverRpc)
 	{
 		this.serverRpc = serverRpc;
+	}
+
+	@Override
+	public boolean isEnabled()
+	{
+		return isEnabled;
+	}
+
+	@Override
+	public void setEnabled(boolean enabled)
+	{
+		isEnabled = enabled;
+	}
+
+	public boolean isReadOnly()
+	{
+		return isReadOnly;
+	}
+
+	public void setReadOnly(boolean readOnly)
+	{
+		getElement().setPropertyBoolean("readOnly", readOnly);
+		String readOnlyStyle = "readonly";
+		if (readOnly)
+		{
+			addStyleDependentName(readOnlyStyle);
+		}
+		else
+		{
+			removeStyleDependentName(readOnlyStyle);
+		}
+		this.isReadOnly = readOnly;
 	}
 }
