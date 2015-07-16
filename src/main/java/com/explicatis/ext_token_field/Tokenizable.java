@@ -1,5 +1,7 @@
 /*
- * Copyright 2015 Florian Schmitt, Explicatis GmbH <florian.schmitt@explicatis.com>
+ * Copyright 2015 Explicatis GmbH <ext-token-field@explicatis.com>
+ * 
+ * Author: Florian Schmitt
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

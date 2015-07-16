@@ -1,5 +1,7 @@
 /*
- * Copyright 2015 Florian Schmitt, Explicatis GmbH <florian.schmitt@explicatis.com>
+ * Copyright 2015 Explicatis GmbH <ext-token-field@explicatis.com>
+ * 
+ * Author: Florian Schmitt
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,8 +77,22 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 					throw new RuntimeException("no input field nor input button set");
 			}
 		});
+	}
 
-		addTokenAction(new DefaultDeleteTokenAction());
+	public void setEnableDefaultDeleteTokenAction(boolean value)
+	{
+		DefaultDeleteTokenAction defaultDeleteTokenAction = new DefaultDeleteTokenAction();
+
+		if (value)
+		{
+			if (!hasTokenizableAction(defaultDeleteTokenAction))
+				addTokenAction(defaultDeleteTokenAction);
+		}
+		else
+		{
+			if (hasTokenizableAction(defaultDeleteTokenAction))
+				removeTokenizableAction(defaultDeleteTokenAction);
+		}
 	}
 
 	@Override
@@ -87,11 +103,14 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		identifierToTokenizable.clear();
 		List<Token> newList = new ArrayList<Token>();
 
-		for (Tokenizable t : newValue)
+		if (newValue != null && newValue.size() > 0)
 		{
-			Token token = convertTokenizableToToken(t);
-			identifierToTokenizable.put(t.getIdentifier(), t);
-			newList.add(token);
+			for (Tokenizable t : newValue)
+			{
+				Token token = convertTokenizableToToken(t);
+				identifierToTokenizable.put(t.getIdentifier(), t);
+				newList.add(token);
+			}
 		}
 
 		getState().tokens = newList;
@@ -123,6 +142,24 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		TokenAction tokenAction = fromTokenizableActionToTokenAction(tokenizableAction);
 		identifierToTokenizableAction.put(tokenizableAction.getIdentifier(), tokenizableAction);
 		getState().tokenActions.add(tokenAction);
+	}
+
+	/**
+	 * TODO: test
+	 * 
+	 * @param tokenizableAction
+	 */
+	public void removeTokenizableAction(TokenizableAction tokenizableAction)
+	{
+		boolean containsKey = identifierToTokenizableAction.containsKey(tokenizableAction.getIdentifier());
+		if (!containsKey)
+		{
+			throw new RuntimeException("TokenizableAction with identifier " + tokenizableAction.getIdentifier() + " not found");
+		}
+
+		TokenAction toRemove = findTokenActionByTokenizableAction(tokenizableAction);
+		getState().tokenActions.remove(toRemove);
+		identifierToTokenizableAction.remove(tokenizableAction.getIdentifier());
 	}
 
 	protected TokenAction fromTokenizableActionToTokenAction(TokenizableAction a)
@@ -175,6 +212,23 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		setValue(newList);
 
 		fireEvent(new TokenRemovedEvent(this, tokenizable));
+	}
+
+	public boolean hasTokenizableAction(TokenizableAction tokenizableAction)
+	{
+		return findTokenActionByTokenizableAction(tokenizableAction) != null;
+	}
+
+	protected TokenAction findTokenActionByTokenizableAction(TokenizableAction tokenizableAction)
+	{
+		for (TokenAction tokenAction : getState().tokenActions)
+		{
+			if (tokenAction.identifier.equals(tokenizableAction.getIdentifier()))
+			{
+				return tokenAction;
+			}
+		}
+		return null;
 	}
 
 	protected Token findTokenByTokenizable(Tokenizable tokenizable)

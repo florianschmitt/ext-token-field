@@ -13,13 +13,20 @@ buildscript {
 }
 
 apply plugin: 'java'
+apply plugin: 'maven-publish'
 apply plugin: 'eclipse'
 apply plugin: 'spring-boot' 
 
+group = 'com.explicatis'
+version = '0.0.9'
+
 defaultTasks 'jar'
 
-version = '0.0.1'
-ext.vaadinVersion='7.4.6'
+ext.nexusUrl='http://nexus:8081/nexus/content/repositories/repository'
+ext.nexusUser='admin'
+ext.nexusPwd='admin123'
+
+mainClassName = ''
 
 repositories {
     mavenCentral()
@@ -31,18 +38,17 @@ configurations {
 }
 
 dependencies {
-   // compile group: 'com.vaadin', name: 'vaadin-client-compiled', version: vaadinVersion
     compile group: 'com.vaadin', name: 'vaadin-client', version: vaadinVersion
     compile group: 'com.vaadin', name: 'vaadin-themes', version: vaadinVersion
     compile group: 'com.vaadin', name: 'vaadin-server', version: vaadinVersion
     compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
-    	compile "com.vaadin:vaadin-spring-boot:${vaadinSpringVersion}"
+    compile "com.vaadin:vaadin-spring-boot:${vaadinSpringVersion}"
     compile "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
     gwt group: 'com.vaadin', name: 'vaadin-client-compiler', version: vaadinVersion
 }
 
 ext.widgetSetName = 'com.explicatis.ext_token_field.WidgetSet'
-ext.widgetSetBuildDir = 'src/main/webapp/VAADIN/widgetsets' //mkdir(file("${buildDir}/VAADIN/widgetsets"))
+ext.widgetSetBuildDir = 'src/main/webapp/VAADIN/widgetsets'
 
 ext.compileClassPath = files(
         sourceSets.main.java.srcDirs,
@@ -69,7 +75,6 @@ clean {
 }
 
 task compileWidgetSet {
-
     dependsOn 'classes'
 
     inputs.files compileClassPath
@@ -106,17 +111,65 @@ task superdevmode(type: JavaExec) {
 
 jar {
     baseName 'ext-token-field'
-    from sourceSets.main.java.srcDirs
-
+    from sourceSets.main.output.classesDir
+    exclude 'rebel.xml'
     manifest {
         attributes(
             'Vaadin-Widgetsets': widgetSetName,
-            'Implementation-Vendor': 'Expliatis GmbH, Florian Schmitt (florian.schmitt@explicatis.com)',
+            'Implementation-Vendor': 'Explicatis GmbH (ext-token-field@explicatis.com), Florian Schmitt',
             'Implementation-Title': 'Extended Tokenfield',
             'Implementation-Version': version ,
             'Vaadin-Package-Version': '1',
             'Vaadin-License-Title': 'Apache License 2.0',
             'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html'
         )
+    }
+}
+/*
+task javadocJar (type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}*/
+
+task sourceJar (type : Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+    include '**/*.java'
+    exclude 'rebel.xml'
+    manifest {
+        attributes(
+            'Vaadin-Widgetsets': widgetSetName,
+            'Implementation-Vendor': 'Explicatis GmbH (ext-token-field@explicatis.com), Florian Schmitt',
+            'Implementation-Title': 'Extended Tokenfield',
+            'Implementation-Version': version ,
+            'Vaadin-Package-Version': '1',
+            'Vaadin-License-Title': 'Apache License 2.0',
+            'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html'
+        )
+    }
+}
+
+artifacts {
+    archives jar
+    archives sourceJar
+   /* archives javadocJar*/
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifact jar
+            artifact sourceJar
+            /*artifact javadocJar*/
+        }
+    }
+    repositories {
+        maven {
+            url nexusUrl
+            credentials {
+                username = nexusUser
+                password = nexusPwd
+            }
+        }
     }
 }

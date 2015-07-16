@@ -1,5 +1,7 @@
 /*
- * Copyright 2015 Florian Schmitt, Explicatis GmbH <florian.schmitt@explicatis.com>
+ * Copyright 2015 Explicatis GmbH <ext-token-field@explicatis.com>
+ * 
+ * Author: Florian Schmitt
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +72,7 @@ public class TestUI extends UI
 		mainLayout.addComponent(getTestLayout5());
 		mainLayout.addComponent(getTestLayout6());
 		mainLayout.addComponent(getTestLayout7());
+		mainLayout.addComponent(getTestLayout8());
 
 		setContent(mainLayout);
 	}
@@ -354,6 +357,43 @@ public class TestUI extends UI
 			public void buttonClick(ClickEvent event)
 			{
 				Notification.show("add clicked");
+			}
+		});
+		tokenField.setInputButton(add);
+		tokenField.setValue(list);
+		result.addComponent(tokenField);
+		result.setSizeFull();
+
+		return result;
+	}
+
+	private HorizontalLayout getTestLayout8()
+	{
+		HorizontalLayout result = new HorizontalLayout();
+
+		List<MyCustomBean> list = new LinkedList<>();
+		list.add(new MyCustomBean(1, "Wert 1"));
+		list.add(new MyCustomBean(2, "Wert 2"));
+		list.add(new MyCustomBean(3, "Wert 3"));
+		list.add(new MyCustomBean(4, "Wert 4"));
+
+		ExtTokenField tokenField = new ExtTokenField();
+
+		tokenField.setSizeFull();
+		Button add = new Button();
+		add.setCaption("add element");
+		add.setIcon(FontAwesome.PLUS_CIRCLE);
+		add.addStyleName(ValoTheme.BUTTON_BORDERLESS);
+		add.addClickListener(new ClickListener()
+		{
+
+			private boolean	value	= true;
+
+			@Override
+			public void buttonClick(ClickEvent event)
+			{
+				tokenField.setEnableDefaultDeleteTokenAction(value);
+				value = !value;
 			}
 		});
 		tokenField.setInputButton(add);
