@@ -255,14 +255,22 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 
 	public void setInputField(ComboBox field)
 	{
-		addComponent(field);
-		getState().inputField = field;
+		if (field != null)
+		{
+			removeFieldOrButton();
+			addComponent(field);
+			getState().inputField = field;
+		}
 	}
 
 	public void setInputButton(Button button)
 	{
-		addComponent(button);
-		getState().inputButton = button;
+		if (button != null)
+		{
+			removeFieldOrButton();
+			addComponent(button);
+			getState().inputButton = button;
+		}
 	}
 
 	public boolean hasInputField()
@@ -273,6 +281,16 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	public boolean hasInputButton()
 	{
 		return getInputButton() != null;
+	}
+
+	private void removeFieldOrButton()
+	{
+		if (iterator().hasNext())
+		{
+			removeComponent(iterator().next());
+			getState().inputButton = null;
+			getState().inputField = null;
+		}
 	}
 
 	public ComboBox getInputField()
@@ -312,9 +330,9 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	{
 		super.setReadOnly(readOnly);
 		if (hasInputField())
-			getInputField().setVisible(readOnly);
+			getInputField().setVisible(!readOnly);
 		else if (hasInputButton())
-			getInputButton().setVisible(readOnly);
+			getInputButton().setVisible(!readOnly);
 	}
 
 	@Override
@@ -375,15 +393,42 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	 * copied from AbstractComponentContainer
 	 * 
 	 */
+	public void removeComponent(Component c)
+	{
+		if (equals(c.getParent()))
+		{
+			c.setParent(null);
+			fireComponentDetachEvent(c);
+			markAsDirty();
+		}
+	}
+
+	/**
+	 * copied from AbstractComponentContainer
+	 * 
+	 */
 	protected void fireComponentAttachEvent(Component component)
 	{
 		fireEvent(new ComponentAttachEvent(this, component));
 	}
 
+	/**
+	 * copied from AbstractComponentContainer
+	 * 
+	 */
+	protected void fireComponentDetachEvent(Component component)
+	{
+		fireEvent(new ComponentDetachEvent(this, component));
+	}
+
+	/**
+	 * copied from AbstractComponentContainer
+	 * 
+	 */
 	private class ComponentIterator implements Iterator<Component>, Serializable
 	{
 
-		boolean	first	= (hasInputButton()) || (hasInputField());
+		boolean first = (hasInputButton()) || (hasInputField());
 
 		@Override
 		public boolean hasNext()
