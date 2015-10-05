@@ -1,0 +1,141 @@
+buildscript {
+    ext {
+        springBootVersion = '1.2.6.RELEASE'
+		vaadinVersion = '7.5.7'
+		vaadinSpringVersion = '1.0.0'
+		extTokenFieldVersion = '0.1.0'
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+System.setProperty("file.encoding", "UTF-8")
+
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'eclipse'
+apply plugin: 'spring-boot' 
+apply plugin: 'war'
+
+group = 'com.explicatis'
+version = '0.0.1'
+
+war {
+    baseName = 'ExtTokenFieldDemo'
+}
+
+defaultTasks 'jar'
+
+ext.nexusUrl='http://nexus:8081/nexus/content/repositories/repository'
+ext.nexusUser='admin'
+ext.nexusPwd='n3xus'
+
+repositories {
+	maven { url "http://nexus:8081/nexus/content/repositories/repository/" }
+    mavenCentral()
+}
+
+configurations {
+	providedRuntime
+    gwt
+    compile.exclude module: "hibernate-entitymanager"
+}
+
+dependencies {
+	compile "com.explicatis:ext-token-field:${extTokenFieldVersion}"
+    compile group: 'com.vaadin', name: 'vaadin-client', version: vaadinVersion
+    compile group: 'com.vaadin', name: 'vaadin-themes', version: vaadinVersion
+    compile group: 'com.vaadin', name: 'vaadin-server', version: vaadinVersion
+    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
+    compile "com.vaadin:vaadin-spring-boot:${vaadinSpringVersion}"
+    compile "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
+    gwt group: 'com.vaadin', name: 'vaadin-client-compiler', version: vaadinVersion
+    
+    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat:${springBootVersion}")
+}
+
+ext.widgetSetName = 'widgetset.WidgetSet'
+ext.widgetSetBuildDir = 'src/main/webapp/VAADIN/widgetsets'
+
+ext.compileClassPath = files(
+        sourceSets.main.java.srcDirs,
+        sourceSets.main.output.classesDir,
+        configurations.compile.files,
+        configurations.gwt.files
+)
+
+compileJava {
+	options.encoding = 'UTF-8'
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+    String java6Home = System.getenv()['JAVA_1_6_HOME']
+    if (java6Home) {
+        if (System.getProperty("os.name").toLowerCase().contains('mac')) {
+            options.bootClasspath = "${java6Home}/../Classes/classes.jar"
+        } else {
+            options.bootClasspath = "${java6Home}/jre/lib/rt.jar"
+        }
+    }
+}
+
+task compileWidgetSet {
+    dependsOn 'classes'
+
+    inputs.files compileClassPath
+    inputs.files sourceSets.main.java.srcDirs
+    outputs.dir widgetSetBuildDir
+
+    doLast {
+        javaexec {
+            maxHeapSize = '512m'
+            jvmArgs = ['-Xss1024k', '-Djava.awt.headless=true']
+            classpath = compileClassPath
+            main = 'com.google.gwt.dev.Compiler'
+            args = ['-war', widgetSetBuildDir, widgetSetName]
+        }
+
+        delete file("${widgetSetBuildDir}/WEB-INF")
+    }
+}
+
+
+task devmode(type: JavaExec) {
+    classpath = compileClassPath
+    main = 'com.google.gwt.dev.DevMode'
+    jvmArgs = ['-XX:MaxPermSize=400m', '-Xmx800m']
+    args = ['-noserver', '-war', widgetSetBuildDir, widgetSetName, '-startupUrl', 'http://localhost:8080/test', '-bindAddress', '0.0.0.0']
+}
+
+task superdevmode(type: JavaExec) {
+    classpath = compileClassPath
+    main = 'com.google.gwt.dev.codeserver.CodeServer'
+    jvmArgs = ['-XX:MaxPermSize=256m', '-Xmx512m']
+    args = [widgetSetName]
+}
+
+jar {
+    baseName 'ext-token-field-demo'
+    from (sourceSets.main.output.classesDir) {
+    	exclude 'rebel.xml'
+    }
+    from (sourceSets.main.java.srcDirs) {
+    	include '**/WidgetSet.gwt.xml'
+    	include '**/public/**'
+    	include '**/*.java'
+    }
+    manifest {
+        attributes(
+            'Vaadin-Widgetsets': widgetSetName,
+            'Implementation-Vendor': 'Explicatis GmbH (ext-token-field@explicatis.com), Florian Schmitt',
+            'Implementation-Title': 'Extended Token Field',
+            'Implementation-Version': version ,
+            'Vaadin-Package-Version': '1',
+            'Vaadin-License-Title': 'Apache License 2.0',
+            'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html'
+        )
+    }
+}
