@@ -1,8 +1,7 @@
 buildscript {
     ext {
         springBootVersion = '1.2.3.RELEASE'
-		vaadinVersion = '7.4.7'
-		vaadinSpringVersion = '1.0.0.beta3'
+		vaadinVersion = '7.5.7'
     }
     repositories {
         mavenCentral()
@@ -12,13 +11,20 @@ buildscript {
     }
 }
 
+System.setProperty("file.encoding", "UTF-8")
+
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 apply plugin: 'eclipse'
 apply plugin: 'spring-boot' 
+apply plugin: 'war'
 
 group = 'com.explicatis'
-version = '0.0.9'
+version = '0.1.0'
+
+war {
+    baseName = 'ExtTokenField'
+}
 
 defaultTasks 'jar'
 
@@ -33,6 +39,7 @@ repositories {
 }
 
 configurations {
+	providedRuntime
     gwt
     compile.exclude module: "hibernate-entitymanager"
 }
@@ -42,9 +49,10 @@ dependencies {
     compile group: 'com.vaadin', name: 'vaadin-themes', version: vaadinVersion
     compile group: 'com.vaadin', name: 'vaadin-server', version: vaadinVersion
     compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
-    compile "com.vaadin:vaadin-spring-boot:${vaadinSpringVersion}"
     compile "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
     gwt group: 'com.vaadin', name: 'vaadin-client-compiler', version: vaadinVersion
+    
+    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat:${springBootVersion}")
 }
 
 ext.widgetSetName = 'com.explicatis.ext_token_field.WidgetSet'
@@ -58,6 +66,7 @@ ext.compileClassPath = files(
 )
 
 compileJava {
+	options.encoding = 'UTF-8'
     sourceCompatibility = '1.6'
     targetCompatibility = '1.6'
     String java6Home = System.getenv()['JAVA_1_6_HOME']
@@ -111,13 +120,19 @@ task superdevmode(type: JavaExec) {
 
 jar {
     baseName 'ext-token-field'
-    from sourceSets.main.output.classesDir
-    exclude 'rebel.xml'
+    from (sourceSets.main.output.classesDir) {
+    	exclude 'rebel.xml'
+    }
+    from (sourceSets.main.java.srcDirs) {
+    	include '**/WidgetSet.gwt.xml'
+    	include '**/public/**'
+    	include '**/*.java'
+    }
     manifest {
         attributes(
             'Vaadin-Widgetsets': widgetSetName,
             'Implementation-Vendor': 'Explicatis GmbH (ext-token-field@explicatis.com), Florian Schmitt',
-            'Implementation-Title': 'Extended Tokenfield',
+            'Implementation-Title': 'Extended Token Field',
             'Implementation-Version': version ,
             'Vaadin-Package-Version': '1',
             'Vaadin-License-Title': 'Apache License 2.0',
@@ -125,11 +140,6 @@ jar {
         )
     }
 }
-/*
-task javadocJar (type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}*/
 
 task sourceJar (type : Jar) {
     classifier = 'sources'
@@ -140,7 +150,7 @@ task sourceJar (type : Jar) {
         attributes(
             'Vaadin-Widgetsets': widgetSetName,
             'Implementation-Vendor': 'Explicatis GmbH (ext-token-field@explicatis.com), Florian Schmitt',
-            'Implementation-Title': 'Extended Tokenfield',
+            'Implementation-Title': 'Extended Token Field',
             'Implementation-Version': version ,
             'Vaadin-Package-Version': '1',
             'Vaadin-License-Title': 'Apache License 2.0',
@@ -152,7 +162,6 @@ task sourceJar (type : Jar) {
 artifacts {
     archives jar
     archives sourceJar
-   /* archives javadocJar*/
 }
 
 publishing {
@@ -160,7 +169,6 @@ publishing {
         maven(MavenPublication) {
             artifact jar
             artifact sourceJar
-            /*artifact javadocJar*/
         }
     }
     repositories {
