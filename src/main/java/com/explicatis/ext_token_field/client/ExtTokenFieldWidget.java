@@ -231,7 +231,7 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 				{
 					rightKeyDown(widget);
 				}
-				else if (event.getNativeKeyCode() == KeyCodes.KEY_DELETE || event.getNativeKeyCode() == KeyCodes.KEY_BACKSPACE)
+				else if (event.getNativeKeyCode() == KeyCodes.KEY_DELETE)
 				{
 					TokenAction deleteTokenAction = findTokenAction(TokenAction.DELETE_TOKEN_ACTION_IDENTIFIER);
 					if (deleteTokenAction != null)
