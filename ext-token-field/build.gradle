@@ -20,7 +20,7 @@ apply plugin: 'spring-boot'
 apply plugin: 'war'
 
 group = 'com.explicatis'
-version = '0.1.0'
+version = '0.1.2'
 
 war {
     baseName = 'ExtTokenField'
@@ -28,9 +28,7 @@ war {
 
 defaultTasks 'jar'
 
-ext.nexusUrl='http://nexus:8081/nexus/content/repositories/repository'
-ext.nexusUser='admin'
-ext.nexusPwd='admin123'
+ext.mavenUrl = 'http://maven.vaadin.com/vaadin-addons'
 
 mainClassName = ''
 
@@ -119,6 +117,7 @@ task superdevmode(type: JavaExec) {
 }
 
 jar {
+	dependsOn 'generatePomFileForMavenPublication'
     baseName 'ext-token-field'
     from (sourceSets.main.output.classesDir) {
     	exclude 'rebel.xml'
@@ -127,6 +126,11 @@ jar {
     	include '**/WidgetSet.gwt.xml'
     	include '**/public/**'
     	include '**/*.java'
+    }
+    from("$buildDir/publications/maven") {
+    	include 'pom-default.xml'
+    	into 'META-INF/maven/com.explicatis/ext-token-field/'
+    	rename ('pom-default.xml', 'pom.xml')
     }
     manifest {
         attributes(
@@ -173,11 +177,32 @@ publishing {
     }
     repositories {
         maven {
-            url nexusUrl
-            credentials {
-                username = nexusUser
-                password = nexusPwd
-            }
+            url mavenUrl
         }
     }
+}
+
+task fakeJar(type: Jar) {
+	manifest {
+    attributes(
+        'Implementation-Vendor': 'Explicatis GmbH (ext-token-field@explicatis.com), Florian Schmitt',
+        'Implementation-Title': 'Extended Token Field',
+        'Implementation-Version': version ,
+        'Vaadin-Package-Version': '1',
+        'Vaadin-License-Title': 'Apache License 2.0',
+        'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html'
+    )
+    }
+    fakeJar.manifest.writeTo("$buildDir/tmp/fakeJar/MANIFEST.MF")
+}
+
+task buildZip(type: Zip) {
+    dependsOn fakeJar
+	from jar
+	from sourceJar
+	into ('META-INF') {
+	    from ("$buildDir/tmp/fakeJar")
+		include 'MANIFEST.MF'
+	}
+	
 }
