@@ -171,7 +171,8 @@ task fakeJar(type: Jar) {
         'Implementation-Version': version,
         'Vaadin-Package-Version': '1',
         'Vaadin-License-Title': 'Apache License 2.0',
-        'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html'
+        'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html',
+        'Vaadin-Addon': "ext-token-field-${project.version}.jar"
     )
     }
     fakeJar.manifest.writeTo("$buildDir/tmp/fakeJar/MANIFEST.MF")
