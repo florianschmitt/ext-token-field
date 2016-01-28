@@ -15,13 +15,12 @@ System.setProperty("file.encoding", "UTF-8")
 
 apply plugin: 'java'
 apply plugin: 'maven-publish'
-apply plugin: 'maven'
 apply plugin: 'eclipse'
 apply plugin: 'spring-boot' 
 apply plugin: 'war'
 
 group = 'com.explicatis'
-version = '0.1.3'
+version = '0.1.4'
 
 war {
     baseName = 'ExtTokenField'
@@ -118,7 +117,6 @@ task superdevmode(type: JavaExec) {
 }
 
 jar {
-	dependsOn 'generatePom'
     baseName 'ext-token-field'
     from (sourceSets.main.output.classesDir) {
     	exclude 'rebel.xml'
@@ -128,18 +126,13 @@ jar {
     	include '**/public/**'
     	include '**/*.java'
     }
-    from ("$buildDir/tmp/pom/pom.xml") {
-    	include 'pom.xml'
-    	into 'META-INF/maven/com.explicatis/ext-token-field/'
-    }
     manifest {
         attributes(
+        	'Vaadin-Package-Version': '1',
             'Vaadin-Widgetsets': widgetSetName,
-            'Implementation-Vendor': 'Explicatis GmbH (ext-token-field@explicatis.com), Florian Schmitt',
             'Implementation-Title': 'Extended Token Field',
-            'Implementation-Version': version ,
-            'Vaadin-Package-Version': '1',
-            'Vaadin-License-Title': 'Apache License 2.0',
+            'Implementation-Version': version,
+			'Vaadin-License-Title': 'Apache License 2.0',
             'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html'
         )
     }
@@ -174,9 +167,8 @@ publishing {
 task fakeJar(type: Jar) {
 	manifest {
     attributes(
-        'Implementation-Vendor': 'Explicatis GmbH (ext-token-field@explicatis.com), Florian Schmitt',
         'Implementation-Title': 'Extended Token Field',
-        'Implementation-Version': version ,
+        'Implementation-Version': version,
         'Vaadin-Package-Version': '1',
         'Vaadin-License-Title': 'Apache License 2.0',
         'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html'
@@ -197,25 +189,4 @@ task buildZip(type: Zip) {
 
 task wrapper(type: Wrapper) {
 	gradleVersion = '2.8'
-}
-
-task generatePom << {
-    pom {
-        project {
-            inceptionYear '2015'
-            repositories {
-        		repository {
-            		id 'vaadin-addons'
-            		url 'http://maven.vaadin.com/vaadin-addons'
-            	}
-       		}
-            licenses {
-                license {
-                    name 'The Apache Software License, Version 2.0'
-                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    distribution 'repo'
-                }
-            }
-        }
-    }.writeTo("$buildDir/tmp/pom/pom.xml")
 }
