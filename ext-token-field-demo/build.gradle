@@ -3,7 +3,7 @@ buildscript {
         springBootVersion = '1.2.6.RELEASE'
 		vaadinVersion = '7.5.7'
 		vaadinSpringVersion = '1.0.0'
-		extTokenFieldVersion = '0.1.5'
+		extTokenFieldVersion = '0.2.0'
     }
     repositories {
         mavenCentral()
@@ -22,7 +22,7 @@ apply plugin: 'spring-boot'
 apply plugin: 'war'
 
 group = 'com.explicatis'
-version = '0.0.1'
+version = '0.0.2'
 
 war {
     baseName = 'ExtTokenFieldDemo'
