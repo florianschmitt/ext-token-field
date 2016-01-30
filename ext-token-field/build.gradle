@@ -14,26 +14,21 @@ buildscript {
 System.setProperty("file.encoding", "UTF-8")
 
 apply plugin: 'java'
+apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'eclipse'
 apply plugin: 'spring-boot' 
-apply plugin: 'war'
 
 group = 'com.explicatis'
-version = '0.1.4'
-
-war {
-    baseName = 'ExtTokenField'
-}
+version = '0.1.5'
 
 defaultTasks 'jar'
-
-ext.mavenUrl = 'http://maven.vaadin.com/vaadin-addons'
 
 mainClassName = ''
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 configurations {
@@ -145,21 +140,11 @@ task sourceJar (type : Jar) {
     exclude 'rebel.xml'
 }
 
-artifacts {
-    archives jar
-    archives sourceJar
-}
-
 publishing {
     publications {
         maven(MavenPublication) {
             artifact jar
             artifact sourceJar
-        }
-    }
-    repositories {
-        maven {
-            url mavenUrl
         }
     }
 }
