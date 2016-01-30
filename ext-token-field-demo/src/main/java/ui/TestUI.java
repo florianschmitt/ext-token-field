@@ -33,6 +33,7 @@ import com.explicatis.ext_token_field.events.TokenRemovedListener;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
 import com.vaadin.data.Item;
+import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.VaadinRequest;
@@ -77,7 +78,7 @@ public class TestUI extends UI
 
 		addNote("Keyboard controls (arrow-left, arrow-right & delete)");
 		addNote("ComboBox or Button input (TextField support is planned)");
-		addNote("Custom actions can be defined, if the ignoreReadOnly.. setting is true, they will be still be usable, when the ExtTokenField is set to read only");
+		addNote("Custom actions can be defined, if the setInheritsReadOnlyAndEnabled setting is false, they will be still be usable, when the ExtTokenField is set to read only or is not enabled");
 		addNote("trims long token captions so that token is clickable to expose full caption (planned to be configurable, as to trimming length)");
 		addNote("implement <b>Tokenizable</b> interface in your bean or entity class to be able to set the fields value as a List of these objects");
 
@@ -149,10 +150,24 @@ public class TestUI extends UI
 		};
 	}
 
+	private void addValueChangeListeners(ExtTokenField extTokenField)
+	{
+		extTokenField.addValueChangeListener(event -> Notification.show("Value change: " + event.getProperty().getValue()));
+	}
+
 	private void addValueAddedAndRemovedListeners(ExtTokenField extTokenField)
 	{
 		extTokenField.addTokenAddedListener(event -> Notification.show("Token added: " + event.getTokenizable().getStringValue()));
 		extTokenField.addTokenRemovedListener(event -> Notification.show("Token removed: " + event.getTokenizable().getStringValue()));
+	}
+
+	private void removeValueChangeListener(ExtTokenField extTokenField)
+	{
+		Collection<?> valueChange = extTokenField.getListeners(ValueChangeEvent.class);
+		if (valueChange != null && !valueChange.isEmpty())
+		{
+			extTokenField.removeValueChangeListener((ValueChangeListener) valueChange.iterator().next());
+		}
 	}
 
 	private void removeValueAddedAndRemovedListeners(ExtTokenField extTokenField)
@@ -180,6 +195,7 @@ public class TestUI extends UI
 		private CheckBox		enabled							= new CheckBox("enabled", true);
 		private CheckBox		addCustomAction					= new CheckBox("add or remove custom action");
 		private CheckBox		readOnlyIgnoringCustomAction	= new CheckBox("should the custom action ignore read only");
+		private CheckBox		activateTokenAddedListener		= new CheckBox("add or remove TokenAddedListener");
 		private CheckBox		activateValueChangeListener		= new CheckBox("add or remove ValueChangeListener");
 
 		private ComboBox		comboBox						= TestUI.getComboBox();
@@ -203,8 +219,15 @@ public class TestUI extends UI
 			FormLayout field = new FormLayout(tokenField);
 			field.setSizeFull();
 
+			Button btn = new Button("add");
+			btn.addClickListener(e -> {
+				SimpleTokenizable s = new SimpleTokenizable(2134, "TEST");
+				tokenField.addTokenizable(s);
+			});
+			field.addComponent(btn);
+
 			addComponent(field);
-			FormLayout configLayout = new FormLayout(readOnly, enabled, delete, comboBoxOrButton, addCustomAction, readOnlyIgnoringCustomAction, activateValueChangeListener);
+			FormLayout configLayout = new FormLayout(readOnly, enabled, delete, comboBoxOrButton, addCustomAction, readOnlyIgnoringCustomAction, activateValueChangeListener, activateTokenAddedListener);
 			configLayout.setCaption("modify settings");
 			configLayout.setSizeFull();
 			addComponent(configLayout);
@@ -256,7 +279,7 @@ public class TestUI extends UI
 				}
 			});
 
-			activateValueChangeListener.addValueChangeListener(event -> {
+			activateTokenAddedListener.addValueChangeListener(event -> {
 				if (tokenField.getListeners(TokenAddedEvent.class).isEmpty())
 				{
 					addValueAddedAndRemovedListeners(tokenField);
@@ -264,6 +287,17 @@ public class TestUI extends UI
 				else
 				{
 					removeValueAddedAndRemovedListeners(tokenField);
+				}
+			});
+
+			activateValueChangeListener.addValueChangeListener(event -> {
+				if (tokenField.getListeners(ValueChangeEvent.class).isEmpty())
+				{
+					addValueChangeListeners(tokenField);
+				}
+				else
+				{
+					removeValueChangeListener(tokenField);
 				}
 			});
 		}
