@@ -3,7 +3,7 @@ buildscript {
         springBootVersion = '1.2.6.RELEASE'
 		vaadinVersion = '7.5.7'
 		vaadinSpringVersion = '1.0.0'
-		extTokenFieldVersion = '0.1.0'
+		extTokenFieldVersion = '0.1.5'
     }
     repositories {
         mavenCentral()
@@ -30,13 +30,9 @@ war {
 
 defaultTasks 'jar'
 
-ext.nexusUrl='http://nexus:8081/nexus/content/repositories/repository'
-ext.nexusUser='admin'
-ext.nexusPwd='n3xus'
-
 repositories {
-	maven { url "http://nexus:8081/nexus/content/repositories/repository/" }
     mavenCentral()
+	mavenLocal()
 }
 
 configurations {
@@ -138,4 +134,8 @@ jar {
             'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html'
         )
     }
+}
+
+task wrapper(type: Wrapper) {
+	gradleVersion = '2.8'
 }
