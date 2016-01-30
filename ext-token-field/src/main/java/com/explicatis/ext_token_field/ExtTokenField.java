@@ -193,6 +193,7 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		setValue(currentValue);
 
 		fireEvent(new TokenAddedEvent(this, tokenizable));
+		fireEvent(new ValueChangeEvent(this));
 	}
 
 	public void removeTokenizable(Tokenizable tokenizable)
