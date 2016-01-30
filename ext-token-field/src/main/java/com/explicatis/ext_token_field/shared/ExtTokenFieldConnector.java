@@ -20,28 +20,20 @@ package com.explicatis.ext_token_field.shared;
 
 import com.explicatis.ext_token_field.ExtTokenField;
 import com.explicatis.ext_token_field.client.ExtTokenFieldWidget;
-import com.vaadin.client.ComponentConnector;
-import com.vaadin.client.ConnectorHierarchyChangeEvent;
 import com.vaadin.client.communication.RpcProxy;
 import com.vaadin.client.communication.StateChangeEvent;
-import com.vaadin.client.ui.AbstractComponentContainerConnector;
+import com.vaadin.client.ui.AbstractFieldConnector;
 import com.vaadin.shared.ui.Connect;
 
 @SuppressWarnings("serial")
 @Connect(ExtTokenField.class)
-public class ExtTokenFieldConnector extends AbstractComponentContainerConnector
+public class ExtTokenFieldConnector extends AbstractFieldConnector
 {
 
-	private ExtTokenFieldServerRpc	serverRpc	= RpcProxy.create(ExtTokenFieldServerRpc.class, this);
+	private ExtTokenFieldServerRpc serverRpc = RpcProxy.create(ExtTokenFieldServerRpc.class, this);
 
 	public ExtTokenFieldConnector()
 	{
-	}
-
-	@Override
-	public void updateCaption(ComponentConnector connector)
-	{
-
 	}
 
 	@Override
@@ -63,12 +55,6 @@ public class ExtTokenFieldConnector extends AbstractComponentContainerConnector
 	}
 
 	@Override
-	public void onConnectorHierarchyChange(ConnectorHierarchyChangeEvent event)
-	{
-	}
-
-	@SuppressWarnings("deprecation")
-	@Override
 	public void onStateChanged(StateChangeEvent stateChangeEvent)
 	{
 		super.onStateChanged(stateChangeEvent);
@@ -86,28 +72,4 @@ public class ExtTokenFieldConnector extends AbstractComponentContainerConnector
 		getWidget().setReadOnly(isReadOnly());
 		getWidget().updateTokens(getState().tokens);
 	}
-
-	// @Override
-	// public boolean hasTooltip()
-	// {
-	// return true;
-	// }
-	//
-	// @Override
-	// public TooltipInfo getTooltipInfo(Element element)
-	// {
-	// TooltipInfo tooltipInfo = null;
-	// Widget w = WidgetUtil.findWidget(element, null);
-	// if (w instanceof HasTooltipKey)
-	// {
-	// tooltipInfo = GWT.create(TooltipInfo.class);
-	// String title = tooltips.get(((HasTooltipKey) w).getTooltipKey());
-	// tooltipInfo.setTitle(title != null ? title : "");
-	// }
-	// if (tooltipInfo == null)
-	// {
-	// tooltipInfo = super.getTooltipInfo(element);
-	// }
-	// return tooltipInfo;
-	// }
 }
