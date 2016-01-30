@@ -42,4 +42,10 @@ public class SimpleTokenizable implements Tokenizable
 		return id;
 	}
 
+	@Override
+	public String toString()
+	{
+		return String.format("SimpleTokenizable (%d,'%s')", id, stringValue);
+	}
+
 }
