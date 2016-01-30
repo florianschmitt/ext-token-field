@@ -192,10 +192,11 @@ public class TestUI extends UI
 		private CheckBox		delete							= new CheckBox("activate or deactivate delete action", true);
 		private CheckBox		comboBoxOrButton				= new CheckBox("ComboBox or Button");
 		private CheckBox		readOnly						= new CheckBox("read only");
+		private CheckBox		required						= new CheckBox("required");
 		private CheckBox		enabled							= new CheckBox("enabled", true);
 		private CheckBox		addCustomAction					= new CheckBox("add or remove custom action");
 		private CheckBox		readOnlyIgnoringCustomAction	= new CheckBox("should the custom action ignore read only");
-		private CheckBox		activateTokenAddedListener		= new CheckBox("add or remove TokenAddedListener");
+		private CheckBox		activateTokenAddedListener		= new CheckBox("add or remove TokenAddedListener & TokenRemovedListener");
 		private CheckBox		activateValueChangeListener		= new CheckBox("add or remove ValueChangeListener");
 
 		private ComboBox		comboBox						= TestUI.getComboBox();
@@ -219,15 +220,8 @@ public class TestUI extends UI
 			FormLayout field = new FormLayout(tokenField);
 			field.setSizeFull();
 
-			Button btn = new Button("add");
-			btn.addClickListener(e -> {
-				SimpleTokenizable s = new SimpleTokenizable(2134, "TEST");
-				tokenField.addTokenizable(s);
-			});
-			field.addComponent(btn);
-
 			addComponent(field);
-			FormLayout configLayout = new FormLayout(readOnly, enabled, delete, comboBoxOrButton, addCustomAction, readOnlyIgnoringCustomAction, activateValueChangeListener, activateTokenAddedListener);
+			FormLayout configLayout = new FormLayout(readOnly, enabled, required, delete, comboBoxOrButton, addCustomAction, readOnlyIgnoringCustomAction, activateValueChangeListener, activateTokenAddedListener);
 			configLayout.setCaption("modify settings");
 			configLayout.setSizeFull();
 			addComponent(configLayout);
@@ -300,6 +294,8 @@ public class TestUI extends UI
 					removeValueChangeListener(tokenField);
 				}
 			});
+
+			required.addValueChangeListener(e -> tokenField.setRequired(required.getValue()));
 		}
 	}
 }
