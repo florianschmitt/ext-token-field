@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import com.explicatis.ext_token_field.events.TokenAddedEvent;
 import com.explicatis.ext_token_field.events.TokenAddedListener;
@@ -34,7 +35,6 @@ import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldState;
 import com.explicatis.ext_token_field.shared.Token;
 import com.explicatis.ext_token_field.shared.TokenAction;
-import com.google.gwt.thirdparty.guava.common.collect.Iterators;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.ui.AbstractField;
 import com.vaadin.ui.AbstractSingleComponentContainer;
@@ -314,7 +314,7 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	public Iterator<Component> iterator()
 	{
 		if (getInputField() == null && getInputButton() == null)
-			return Iterators.emptyIterator();
+			return emptyIterator();
 
 		return new ComponentIterator();
 	}
@@ -452,6 +452,36 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		public void remove()
 		{
 			throw new UnsupportedOperationException();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> Iterator<T> emptyIterator()
+	{
+		return (Iterator<T>) EmptyIterator.EMPTY_ITERATOR;
+	}
+
+	private static class EmptyIterator<E> implements Iterator<E>
+	{
+
+		static final EmptyIterator<Object> EMPTY_ITERATOR = new EmptyIterator<Object>();
+
+		@Override
+		public boolean hasNext()
+		{
+			return false;
+		}
+
+		@Override
+		public E next()
+		{
+			throw new NoSuchElementException();
+		}
+
+		@Override
+		public void remove()
+		{
+			throw new IllegalStateException();
 		}
 	}
 
