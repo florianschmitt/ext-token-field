@@ -22,6 +22,8 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.explicatis.ext_token_field.ExtTokenField;
 import com.explicatis.ext_token_field.SimpleTokenizable;
@@ -49,6 +51,7 @@ import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
+import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
@@ -114,11 +117,12 @@ public class TestUI extends UI
 		result.setInputPrompt("Type here to add");
 		result.addContainerProperty(LABEL, String.class, "");
 
-		for (String lang : LANGUAGES)
-		{
-			Object addItem = result.addItem();
-			result.getItem(addItem).getItemProperty(LABEL).setValue(lang);
-		}
+		Stream.of(LANGUAGES)//
+				.sorted()//
+				.forEach(lang -> {
+					Object addItem = result.addItem();
+					result.getItem(addItem).getItemProperty(LABEL).setValue(lang);
+				});
 
 		return result;
 	}
@@ -245,12 +249,19 @@ public class TestUI extends UI
 
 		private List<Tokenizable> buildSampleTokenizableList()
 		{
-			List<Tokenizable> list = new LinkedList<>();
-			for (int i = 0; i < LANGUAGES.length - 2; i++)
+			List<Tokenizable> result = new LinkedList<>();
+
+			List<String> list = Stream.of(LANGUAGES)//
+					.limit(LANGUAGES.length - 2)//
+					.sorted()//
+					.collect(Collectors.toList());
+
+			for (int i = 0; i < list.size(); i++)
 			{
-				list.add(new SimpleTokenizable(i, LANGUAGES[i]));
+				result.add(new SimpleTokenizable(i, list.get(i)));
 			}
-			return list;
+
+			return result;
 		}
 
 		private void setupCheckBoxes()
