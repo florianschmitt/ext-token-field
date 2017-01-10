@@ -350,6 +350,18 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 			getInputButton().focus();
 	}
 
+	@Override
+	public boolean isEmpty()
+	{
+		@SuppressWarnings("unchecked")
+		List<Tokenizable> currentValue = (List<Tokenizable>) getValue();
+		if (currentValue == null)
+		{
+			return true;
+		}
+		return currentValue.isEmpty();
+	}
+
 	public void addTokenAddedListener(TokenAddedListener listener)
 	{
 		addListener(TokenAddedEvent.class, listener, TokenAddedEvent.EVENT_METHOD);
