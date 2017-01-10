@@ -321,33 +321,53 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		return (Class) List.class;
 	}
 
+	protected Component internalGetInputComponentOrNull()
+	{
+		if (hasInputField())
+			return getInputField();
+		else if (hasInputButton())
+			return getInputButton();
+		else
+			return null;
+	}
+
+	protected void updateComponentVisibleState()
+	{
+		boolean readOnly = isReadOnly();
+		boolean enabled = isEnabled();
+		Component componentOrNull = internalGetInputComponentOrNull();
+		if (componentOrNull != null)
+		{
+			componentOrNull.setVisible(enabled && !readOnly);
+		}
+	}
+
 	@Override
 	public void setReadOnly(boolean readOnly)
 	{
 		super.setReadOnly(readOnly);
-		if (hasInputField())
-			getInputField().setVisible(!readOnly);
-		else if (hasInputButton())
-			getInputButton().setVisible(!readOnly);
+		updateComponentVisibleState();
 	}
 
 	@Override
 	public void setEnabled(boolean enabled)
 	{
 		super.setEnabled(enabled);
-		if (hasInputField())
-			getInputField().setVisible(enabled);
-		else if (hasInputButton())
-			getInputButton().setVisible(enabled);
+		updateComponentVisibleState();
 	}
 
 	@Override
 	public void focus()
 	{
-		if (hasInputField())
-			getInputField().focus();
-		else if (hasInputButton())
-			getInputButton().focus();
+		Component componentOrNull = internalGetInputComponentOrNull();
+		if (componentOrNull != null)
+		{
+			if (Focusable.class.isInstance(componentOrNull))
+			{
+				Focusable focusable = (Focusable) componentOrNull;
+				focusable.focus();
+			}
+		}
 	}
 
 	@Override
