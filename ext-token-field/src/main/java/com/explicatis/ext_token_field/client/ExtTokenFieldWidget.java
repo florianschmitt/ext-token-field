@@ -64,6 +64,7 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 	private ApplicationConnection		applicationConnection;
 	private boolean						isReadOnly				= false;
 	private boolean						isEnabled				= true;
+	private int							tokenCount				= 0;
 
 	public ExtTokenFieldWidget()
 	{
@@ -141,6 +142,8 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 		removeAllToken();
 		addTokens(tokens);
 
+		int currentTokenCount = tokens.size();
+
 		if (tokenToTheRight != null)
 		{
 			final TokenWidget tokenWidget = findTokenWidget(tokenToTheRight);
@@ -160,20 +163,25 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 		}
 		else
 		{
-			// TODO: this should only happen after the very last token was deleted, not always...
-			Scheduler.get().scheduleDeferred(new ScheduledCommand()
+			boolean lastTokenWasRemoved = (currentTokenCount == 0) && (tokenCount == 1);
+			if (lastTokenWasRemoved)
 			{
-
-				@Override
-				public void execute()
+				Scheduler.get().scheduleDeferred(new ScheduledCommand()
 				{
-					if (inputFilterSelect != null)
-						inputFilterSelect.tb.setFocus(true);
-					else if (inputButton != null)
-						inputButton.setFocus(true);
-				}
-			});
+
+					@Override
+					public void execute()
+					{
+						if (inputFilterSelect != null)
+							inputFilterSelect.tb.setFocus(true);
+						else if (inputButton != null)
+							inputButton.setFocus(true);
+					}
+				});
+			}
 		}
+
+		tokenCount = tokens.size();
 	}
 
 	protected TokenWidget buildTokenWidget(final Token token)

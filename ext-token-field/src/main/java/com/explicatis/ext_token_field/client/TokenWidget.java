@@ -40,15 +40,15 @@ public class TokenWidget extends FocusPanel
 	public static final String			FOCUS_CLASS_NAME			= "focused";
 	public static final String			TOKEN_CONTENT_CLASS_NAME	= "token-content";
 
-	private Label						label;
-
-	protected boolean					isCollapsed					= true;
-	private int							cropLabelLength				= 20;
-	private final Token					token;
-	private FlowPanel					rootPanel;
 	private final ExtTokenFieldWidget	extTokenField;
+	private final Token					token;
+	private final Label					label;
+	private final FlowPanel				rootPanel;
 
-	public TokenWidget(final ExtTokenFieldWidget extTokenField, Token token, List<TokenAction> tokenActions)
+	private boolean						isCollapsed					= true;
+	private int							cropLabelLength				= 20;
+
+	public TokenWidget(final ExtTokenFieldWidget extTokenField, final Token token, List<TokenAction> tokenActions)
 	{
 		this.extTokenField = extTokenField;
 		this.token = token;
@@ -73,10 +73,12 @@ public class TokenWidget extends FocusPanel
 	private void buildTokenActions(List<TokenAction> tokenActions)
 	{
 		if (tokenActions != null)
+		{
 			for (TokenAction a : tokenActions)
 			{
 				buildTokenAction(a);
 			}
+		}
 	}
 
 	private void buildTokenAction(final TokenAction action)

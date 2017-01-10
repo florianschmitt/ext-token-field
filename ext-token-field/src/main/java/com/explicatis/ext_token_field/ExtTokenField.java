@@ -144,11 +144,6 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		getState().tokenActions.add(tokenAction);
 	}
 
-	/**
-	 * TODO: test
-	 * 
-	 * @param tokenizableAction
-	 */
 	public void removeTokenizableAction(TokenizableAction tokenizableAction)
 	{
 		boolean containsKey = identifierToTokenizableAction.containsKey(tokenizableAction.getIdentifier());
@@ -344,6 +339,15 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 			getInputField().setVisible(enabled);
 		else if (hasInputButton())
 			getInputButton().setVisible(enabled);
+	}
+
+	@Override
+	public void focus()
+	{
+		if (hasInputField())
+			getInputField().focus();
+		else if (hasInputButton())
+			getInputButton().focus();
 	}
 
 	public void addTokenAddedListener(TokenAddedListener listener)
