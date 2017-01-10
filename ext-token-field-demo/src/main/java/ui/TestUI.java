@@ -18,6 +18,7 @@
 
 package ui;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,11 +36,13 @@ import com.vaadin.annotations.Widgetset;
 import com.vaadin.data.Item;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
+import com.vaadin.data.Validator.InvalidValueException;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.FormLayout;
@@ -57,7 +60,10 @@ import com.vaadin.ui.themes.ValoTheme;
 public class TestUI extends UI
 {
 
-	private static final String	LABEL	= "label";
+	private static final String	LABEL		= "label";
+	private static String[]		LANGUAGES	= {"PHP", "Java", "JavaScript", "Scala", "Python", "C", "Ruby", "C++"};
+
+	private VerticalLayout		notes;
 	private VerticalLayout		mainLayout;
 
 	@Override
@@ -69,7 +75,7 @@ public class TestUI extends UI
 
 		Label heading = new Label("ExtTokenField");
 		heading.addStyleName(ValoTheme.LABEL_HUGE);
-		Label subheading = new Label("2015 - Explicatis GmbH, Florian Schmitt");
+		Label subheading = new Label(String.format("%d - Explicatis GmbH, Florian Schmitt", LocalDate.now().getYear()));
 		subheading.addStyleName(ValoTheme.LABEL_TINY);
 
 		VerticalLayout head = new VerticalLayout(heading, subheading);
@@ -100,34 +106,31 @@ public class TestUI extends UI
 		notes.addComponent(hl);
 	}
 
-	private static String[]	LANGUAGES	= {"PHP", "Java", "JavaScript", "Scala", "Python", "C", "Ruby", "C++"};
-	private VerticalLayout	notes;
-
 	@SuppressWarnings("unchecked")
-	private static ComboBox getComboBox()
+	private static ComboBox buildComboBox()
 	{
-		ComboBox b = new ComboBox();
-		b.setItemCaptionPropertyId(LABEL);
-		b.setInputPrompt("Type here to add");
-		b.addContainerProperty(LABEL, String.class, "");
+		ComboBox result = new ComboBox();
+		result.setItemCaptionPropertyId(LABEL);
+		result.setInputPrompt("Type here to add");
+		result.addContainerProperty(LABEL, String.class, "");
 
 		for (String lang : LANGUAGES)
 		{
-			Object addItem = b.addItem();
-			b.getItem(addItem).getItemProperty(LABEL).setValue(lang);
+			Object addItem = result.addItem();
+			result.getItem(addItem).getItemProperty(LABEL).setValue(lang);
 		}
 
-		return b;
+		return result;
 	}
 
-	private static Button getAddButton()
+	private static Button buildAddButton()
 	{
-		Button add = new Button();
-		add.setCaption("add element");
-		add.setIcon(FontAwesome.PLUS_CIRCLE);
-		add.addStyleName(ValoTheme.BUTTON_BORDERLESS);
-		add.addClickListener(event -> Notification.show("add clicked"));
-		return add;
+		Button result = new Button();
+		result.setCaption("add element");
+		result.setIcon(FontAwesome.PLUS_CIRCLE);
+		result.addStyleName(ValoTheme.BUTTON_BORDERLESS);
+		result.addClickListener(event -> Notification.show("add clicked"));
+		return result;
 	}
 
 	private ValueChangeListener getComboBoxValueChange(ExtTokenField extTokenField, ComboBox comboBox)
@@ -199,33 +202,55 @@ public class TestUI extends UI
 		private CheckBox		activateTokenAddedListener		= new CheckBox("add or remove TokenAddedListener & TokenRemovedListener");
 		private CheckBox		activateValueChangeListener		= new CheckBox("add or remove ValueChangeListener");
 
-		private ComboBox		comboBox						= TestUI.getComboBox();
-		private Button			addButton						= TestUI.getAddButton();
+		private ComboBox		comboBox						= TestUI.buildComboBox();
+		private Button			addButton						= TestUI.buildAddButton();
 
 		public ConfigurableLayout()
 		{
-			tokenField.setCaption("Tokens");
-			tokenField.setInputField(comboBox);
-			tokenField.setEnableDefaultDeleteTokenAction(delete.getValue());
-
-			List<SimpleTokenizable> list = new LinkedList<>();
-			for (int i = 0; i < LANGUAGES.length - 2; i++)
-			{
-				list.add(new SimpleTokenizable(i, LANGUAGES[i]));
-			}
-			tokenField.setValue(list);
+			initTokenField();
 
 			comboBox.addValueChangeListener(getComboBoxValueChange(tokenField, comboBox));
 
-			FormLayout field = new FormLayout(tokenField);
-			field.setSizeFull();
+			FormLayout formLayout = new FormLayout(tokenField);
+			formLayout.setSizeFull();
 
-			addComponent(field);
+			addComponent(formLayout);
 			FormLayout configLayout = new FormLayout(readOnly, enabled, required, delete, comboBoxOrButton, addCustomAction, readOnlyIgnoringCustomAction, activateValueChangeListener, activateTokenAddedListener);
 			configLayout.setCaption("modify settings");
 			configLayout.setSizeFull();
 			addComponent(configLayout);
 			setupCheckBoxes();
+			initTestButtons();
+		}
+
+		private void initTestButtons()
+		{
+			Button focusTestButton = initFocusTestButton();
+			Button validateTestButton = initValidateTestButton();
+			HorizontalLayout btnLayout = new HorizontalLayout(focusTestButton, validateTestButton);
+			btnLayout.setSpacing(true);
+			addComponent(btnLayout);
+		}
+
+		private void initTokenField()
+		{
+			tokenField.setCaption("Tokens");
+			tokenField.setRequiredError("a value is required");
+			tokenField.setInputField(comboBox);
+			tokenField.setEnableDefaultDeleteTokenAction(delete.getValue());
+
+			List<Tokenizable> list = buildSampleTokenizableList();
+			tokenField.setValue(list);
+		}
+
+		private List<Tokenizable> buildSampleTokenizableList()
+		{
+			List<Tokenizable> list = new LinkedList<>();
+			for (int i = 0; i < LANGUAGES.length - 2; i++)
+			{
+				list.add(new SimpleTokenizable(i, LANGUAGES[i]));
+			}
+			return list;
 		}
 
 		private void setupCheckBoxes()
@@ -246,6 +271,7 @@ public class TestUI extends UI
 			TokenizableAction tokenizableAction = new TokenizableAction("id1", FontAwesome.GEARS)
 			{
 
+				@Override
 				public void onClick(Tokenizable token)
 				{
 					Notification.show("clicked " + token.getStringValue());
@@ -296,6 +322,36 @@ public class TestUI extends UI
 			});
 
 			required.addValueChangeListener(e -> tokenField.setRequired(required.getValue()));
+		}
+
+		private Button initFocusTestButton()
+		{
+			Button result = new Button("focus field", this::focusField);
+			return result;
+		}
+
+		private Button initValidateTestButton()
+		{
+			Button result = new Button("validate field", this::validateField);
+			return result;
+		}
+
+		private void focusField(ClickEvent event)
+		{
+			tokenField.focus();
+		}
+
+		private void validateField(ClickEvent event)
+		{
+			try
+			{
+				tokenField.validate();
+				Notification.show("Success");
+			}
+			catch (InvalidValueException e)
+			{
+				Notification.show("Error: " + e.getMessage());
+			}
 		}
 	}
 }
