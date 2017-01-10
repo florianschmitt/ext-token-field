@@ -1,7 +1,7 @@
 buildscript {
     ext {
         springBootVersion = '1.2.3.RELEASE'
-		vaadinVersion = '7.5.7'
+		vaadinVersion = '7.7.6'
     }
     repositories {
         mavenCentral()
@@ -20,7 +20,7 @@ apply plugin: 'eclipse'
 apply plugin: 'spring-boot' 
 
 group = 'com.explicatis'
-version = '0.2.1'
+version = '0.2.2'
 
 defaultTasks 'jar'
 
