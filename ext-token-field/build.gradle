@@ -20,7 +20,7 @@ apply plugin: 'eclipse'
 apply plugin: 'spring-boot' 
 
 group = 'com.explicatis'
-version = '0.2.2'
+version = '0.2.3'
 
 defaultTasks 'jar'
 
