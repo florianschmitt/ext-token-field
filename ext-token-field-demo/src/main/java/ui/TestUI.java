@@ -33,6 +33,8 @@ import com.explicatis.ext_token_field.events.TokenAddedEvent;
 import com.explicatis.ext_token_field.events.TokenAddedListener;
 import com.explicatis.ext_token_field.events.TokenRemovedEvent;
 import com.explicatis.ext_token_field.events.TokenRemovedListener;
+import com.explicatis.ext_token_field.events.TokenReorderedEvent;
+import com.explicatis.ext_token_field.events.TokenReorderedListener;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
 import com.vaadin.data.Item;
@@ -40,6 +42,7 @@ import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.Validator.InvalidValueException;
 import com.vaadin.server.FontAwesome;
+import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.spring.annotation.SpringUI;
@@ -51,7 +54,6 @@ import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
-import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
@@ -127,13 +129,13 @@ public class TestUI extends UI
 		return result;
 	}
 
-	private static Button buildAddButton()
+	private Button buildAddButton()
 	{
 		Button result = new Button();
 		result.setCaption("add element");
 		result.setIcon(FontAwesome.PLUS_CIRCLE);
 		result.addStyleName(ValoTheme.BUTTON_BORDERLESS);
-		result.addClickListener(event -> Notification.show("add clicked"));
+		result.addClickListener(event -> notificate("add clicked"));
 		return result;
 	}
 
@@ -159,13 +161,15 @@ public class TestUI extends UI
 
 	private void addValueChangeListeners(ExtTokenField extTokenField)
 	{
-		extTokenField.addValueChangeListener(event -> Notification.show("Value change: " + event.getProperty().getValue()));
+		extTokenField.addValueChangeListener(event -> notificate("Value change: " + event.getProperty().getValue()));
 	}
 
-	private void addValueAddedAndRemovedListeners(ExtTokenField extTokenField)
+	private void addTokenListeners(ExtTokenField extTokenField)
 	{
-		extTokenField.addTokenAddedListener(event -> Notification.show("Token added: " + event.getTokenizable().getStringValue()));
-		extTokenField.addTokenRemovedListener(event -> Notification.show("Token removed: " + event.getTokenizable().getStringValue()));
+		extTokenField.addTokenAddedListener(event -> notificate("Token added: " + event.getTokenizable().getStringValue()));
+		extTokenField.addTokenRemovedListener(event -> notificate("Token removed: " + event.getTokenizable().getStringValue()));
+		extTokenField.addTokenReorderedListener(
+				event -> notificate(String.format("Token reordered: source=%s target=%s type=%s", event.getSourceTokenizable().getStringValue(), event.getTargetTokenizable().getStringValue(), event.getDropTargetType().toString())));
 	}
 
 	private void removeValueChangeListener(ExtTokenField extTokenField)
@@ -190,6 +194,19 @@ public class TestUI extends UI
 		{
 			extTokenField.removeTokenRemovedListener((TokenRemovedListener) listenerRemoved.iterator().next());
 		}
+
+		Collection<?> listenerReordered = extTokenField.getListeners(TokenReorderedEvent.class);
+		if (listenerReordered != null && !listenerReordered.isEmpty())
+		{
+			extTokenField.removeTokenReorderedListener((TokenReorderedListener) listenerReordered.iterator().next());
+		}
+	}
+
+	protected void notificate(String msg)
+	{
+		Notification notification = new Notification(msg);
+		notification.setDelayMsec(-1);
+		notification.show(Page.getCurrent());
 	}
 
 	private class ConfigurableLayout extends VerticalLayout
@@ -203,11 +220,12 @@ public class TestUI extends UI
 		private CheckBox		enabled							= new CheckBox("enabled", true);
 		private CheckBox		addCustomAction					= new CheckBox("add or remove custom action");
 		private CheckBox		readOnlyIgnoringCustomAction	= new CheckBox("should the custom action ignore read only");
-		private CheckBox		activateTokenAddedListener		= new CheckBox("add or remove TokenAddedListener & TokenRemovedListener");
+		private CheckBox		activateTokenListeners			= new CheckBox("add or remove TokenAddedListener & TokenRemovedListener & TokenReorderedListener");
 		private CheckBox		activateValueChangeListener		= new CheckBox("add or remove ValueChangeListener");
+		private CheckBox		enableDragDrop					= new CheckBox("enable drag and drop reordering");
 
 		private ComboBox		comboBox						= TestUI.buildComboBox();
-		private Button			addButton						= TestUI.buildAddButton();
+		private Button			addButton						= buildAddButton();
 
 		public ConfigurableLayout()
 		{
@@ -219,7 +237,7 @@ public class TestUI extends UI
 			formLayout.setSizeFull();
 
 			addComponent(formLayout);
-			FormLayout configLayout = new FormLayout(readOnly, enabled, required, delete, comboBoxOrButton, addCustomAction, readOnlyIgnoringCustomAction, activateValueChangeListener, activateTokenAddedListener);
+			FormLayout configLayout = new FormLayout(readOnly, enabled, required, delete, comboBoxOrButton, addCustomAction, readOnlyIgnoringCustomAction, activateValueChangeListener, activateTokenListeners, enableDragDrop);
 			configLayout.setCaption("modify settings");
 			configLayout.setSizeFull();
 			addComponent(configLayout);
@@ -285,7 +303,7 @@ public class TestUI extends UI
 				@Override
 				public void onClick(Tokenizable token)
 				{
-					Notification.show("clicked " + token.getStringValue());
+					notificate("clicked " + token.getStringValue());
 				};
 			};
 
@@ -310,10 +328,10 @@ public class TestUI extends UI
 				}
 			});
 
-			activateTokenAddedListener.addValueChangeListener(event -> {
+			activateTokenListeners.addValueChangeListener(event -> {
 				if (tokenField.getListeners(TokenAddedEvent.class).isEmpty())
 				{
-					addValueAddedAndRemovedListeners(tokenField);
+					addTokenListeners(tokenField);
 				}
 				else
 				{
@@ -333,6 +351,8 @@ public class TestUI extends UI
 			});
 
 			required.addValueChangeListener(e -> tokenField.setRequired(required.getValue()));
+
+			enableDragDrop.addValueChangeListener(e -> tokenField.setTokenDragDropEnabled(enableDragDrop.getValue()));
 		}
 
 		private Button initFocusTestButton()
@@ -357,11 +377,11 @@ public class TestUI extends UI
 			try
 			{
 				tokenField.validate();
-				Notification.show("Success");
+				notificate("Success");
 			}
 			catch (InvalidValueException e)
 			{
-				Notification.show("Error: " + e.getMessage());
+				notificate("Error: " + e.getMessage());
 			}
 		}
 	}

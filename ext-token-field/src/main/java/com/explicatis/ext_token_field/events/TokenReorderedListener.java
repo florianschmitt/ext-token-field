@@ -16,15 +16,11 @@
  * limitations under the License.
  */
 
-package com.explicatis.ext_token_field.shared;
+package com.explicatis.ext_token_field.events;
 
-import com.vaadin.shared.communication.ServerRpc;
-
-public interface ExtTokenFieldServerRpc extends ServerRpc
+public interface TokenReorderedListener
 {
 
-	void tokenActionClicked(Token token, TokenAction tokenAction);
-
-	void tokenDroped(Token sourceToken, Token targetToken, DropTargetType type);
+	public void tokenReorderedEvent(TokenReorderedEvent event);
 
 }

@@ -20,16 +20,20 @@ package com.explicatis.ext_token_field.client;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.explicatis.ext_token_field.shared.DropTargetType;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.Token;
 import com.explicatis.ext_token_field.shared.TokenAction;
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.core.client.Scheduler.ScheduledCommand;
+import com.google.gwt.dom.client.Node;
+import com.google.gwt.dom.client.NodeList;
 import com.google.gwt.event.dom.client.BlurEvent;
 import com.google.gwt.event.dom.client.BlurHandler;
 import com.google.gwt.event.dom.client.FocusEvent;
@@ -64,6 +68,7 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 	private ApplicationConnection		applicationConnection;
 	private boolean						isReadOnly				= false;
 	private boolean						isEnabled				= true;
+	private boolean						tokenDragAndDropEnabled	= false;
 	private int							tokenCount				= 0;
 
 	public ExtTokenFieldWidget()
@@ -100,6 +105,16 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 			this.inputButton.addKeyDownHandler(initKeyDownHandler());
 			add(this.inputButton);
 		}
+	}
+
+	public boolean getTokenDragAndDropEnabled()
+	{
+		return this.tokenDragAndDropEnabled;
+	}
+
+	public void setTokenDragAndDropEnabled(boolean value)
+	{
+		this.tokenDragAndDropEnabled = value;
 	}
 
 	public void setInputField(Connector inputField)
@@ -139,7 +154,8 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 	public void updateTokens(List<Token> tokens)
 	{
 		// TODO: register changes, not recreate everything
-		removeAllToken();
+		removeAllTokens();
+		removeTokenDropTargets();
 		addTokens(tokens);
 
 		int currentTokenCount = tokens.size();
@@ -346,13 +362,49 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 		for (int i = 0; i < tokens.size(); i++)
 		{
 			Token t = tokens.get(i);
-			TokenWidget widget = buildTokenWidget(t);
-			tokenWidgets.add(widget);
-			insert(widget, i);
+			insertTokenAtPosition(i, t);
+		}
+
+		if (tokenDragAndDropEnabled)
+		{
+			int lastTokenIndex = tokens.size() - 1;
+			Token lastToken = tokens.get(lastTokenIndex);
+			lastTokenIndex *= 2;
+			addDropTargetAfter(lastTokenIndex, lastToken);
 		}
 	}
 
-	protected void removeAllToken()
+	private void insertTokenAtPosition(int i, Token t)
+	{
+		TokenWidget widget = buildTokenWidget(t);
+		tokenWidgets.add(widget);
+
+		if (tokenDragAndDropEnabled)
+		{
+			i *= 2;
+		}
+
+		insert(widget, i);
+
+		if (tokenDragAndDropEnabled)
+		{
+			addDropTargetBefore(i, t);
+		}
+	}
+
+	private void addDropTargetBefore(int i, Token t)
+	{
+		DropTargetWidget dropTarget = new DropTargetWidget(this, DropTargetType.BEFORE, t);
+		insert(dropTarget, i);
+	}
+
+	private void addDropTargetAfter(int i, Token t)
+	{
+		DropTargetWidget dropTarget = new DropTargetWidget(this, DropTargetType.AFTER, t);
+		insert(dropTarget, i + 2);
+	}
+
+	protected void removeAllTokens()
 	{
 		for (TokenWidget t : tokenWidgets)
 		{
@@ -361,6 +413,48 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 		tokenWidgets.clear();
 	}
 
+	protected void removeTokenDropTargets()
+	{
+		NodeList<Node> childNodes = getElement().getChildNodes();
+		Set<Node> toBeRemoved = new HashSet<Node>();
+
+		for (int i = 0; i < childNodes.getLength(); i++)
+		{
+			Node item = childNodes.getItem(i);
+
+			com.google.gwt.dom.client.Element element = (com.google.gwt.dom.client.Element) item.cast();
+			boolean hasDropTargetClass = DropTargetWidget.DROP_TARGET_CLASS_NAME.equals(element.getClassName());
+			if (hasDropTargetClass)
+			{
+				toBeRemoved.add(item);
+			}
+		}
+
+		for (Node node : toBeRemoved)
+		{
+			getElement().removeChild(node);
+		}
+	}
+
+	/**
+	 * maybe a map would be a better idea
+	 */
+	public Token findTokenById(long tokenId)
+	{
+		for (TokenWidget t : tokenWidgets)
+		{
+			if (t.getToken().id == tokenId)
+			{
+				return t.getToken();
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * maybe a map would be a better idea
+	 */
 	private TokenWidget findTokenWidget(Token token)
 	{
 		for (TokenWidget t : tokenWidgets)
@@ -377,6 +471,11 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 	public void setServerRpc(ExtTokenFieldServerRpc serverRpc)
 	{
 		this.serverRpc = serverRpc;
+	}
+
+	public ExtTokenFieldServerRpc getServerRpc()
+	{
+		return this.serverRpc;
 	}
 
 	@Override

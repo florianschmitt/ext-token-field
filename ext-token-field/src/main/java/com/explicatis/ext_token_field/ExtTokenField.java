@@ -31,6 +31,9 @@ import com.explicatis.ext_token_field.events.TokenAddedEvent;
 import com.explicatis.ext_token_field.events.TokenAddedListener;
 import com.explicatis.ext_token_field.events.TokenRemovedEvent;
 import com.explicatis.ext_token_field.events.TokenRemovedListener;
+import com.explicatis.ext_token_field.events.TokenReorderedEvent;
+import com.explicatis.ext_token_field.events.TokenReorderedListener;
+import com.explicatis.ext_token_field.shared.DropTargetType;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldState;
 import com.explicatis.ext_token_field.shared.Token;
@@ -59,6 +62,12 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 																						identifierToTokenizableAction.get(tokenAction.identifier).onClick(tokenizable);
 																					}
 																				}
+
+																				@Override
+																				public void tokenDroped(Token sourceToken, Token targetToken, DropTargetType type)
+																				{
+																					handleDroppedToken(sourceToken, targetToken, type);
+																				}
 																			};
 
 	private Map<Long, Tokenizable>			identifierToTokenizable			= new HashMap<Long, Tokenizable>();
@@ -77,6 +86,11 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 					throw new RuntimeException("no input field nor input button set");
 			}
 		});
+	}
+
+	public void setTokenDragDropEnabled(boolean value)
+	{
+		getState().tokenDragAndDropEnabled = value;
 	}
 
 	public void setEnableDefaultDeleteTokenAction(boolean value)
@@ -208,6 +222,57 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		setValue(newList);
 
 		fireEvent(new TokenRemovedEvent(this, tokenizable));
+		// valueChangeEvent doesn't need to be fired, because a new list is created
+	}
+
+	protected void handleDroppedToken(Token sourceToken, Token targetToken, DropTargetType type)
+	{
+		reorderToken(sourceToken, targetToken, type);
+
+		@SuppressWarnings("unchecked")
+		List<Tokenizable> currentValue = (List<Tokenizable>) getValue();
+		if (currentValue == null)
+		{
+			throw new IllegalStateException("value cannot be null, if token was dropped");
+		}
+
+		Tokenizable sourceTokenizable = findTokenizableInListByToken(currentValue, sourceToken);
+		Tokenizable targetTokenizable = findTokenizableInListByToken(currentValue, targetToken);
+
+		int targetIndex = currentValue.indexOf(targetTokenizable);
+		targetIndex = DropTargetType.BEFORE.equals(type) ? targetIndex : targetIndex + 1;
+
+		boolean afterLast = targetIndex == currentValue.size() && DropTargetType.AFTER.equals(type);
+
+		if (isIndexOfALowerThanB(currentValue, sourceTokenizable, targetTokenizable))
+			targetIndex--;
+
+		currentValue.remove(sourceTokenizable);
+		if (afterLast)
+		{
+			currentValue.add(sourceTokenizable);
+		}
+		else
+		{
+			currentValue.add(targetIndex, sourceTokenizable);
+		}
+
+		setValue(currentValue);
+
+		fireEvent(new TokenReorderedEvent(this, sourceTokenizable, targetTokenizable, type));
+		fireEvent(new ValueChangeEvent(this));
+	}
+
+	private Tokenizable findTokenizableInListByToken(List<Tokenizable> list, Token token)
+	{
+		for (Tokenizable tokenizable : list)
+		{
+			if (tokenizable.getIdentifier() == token.id)
+			{
+				return tokenizable;
+			}
+		}
+		return null;
 	}
 
 	public boolean hasTokenizableAction(TokenizableAction tokenizableAction)
@@ -247,6 +312,30 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	private void removeToken(Token token)
 	{
 		getState().tokens.remove(token);
+	}
+
+	private void reorderToken(Token source, Token target, DropTargetType type)
+	{
+		List<Token> tokens = getState().tokens;
+		int targetIndex = tokens.indexOf(target);
+		targetIndex = DropTargetType.BEFORE.equals(type) ? targetIndex : targetIndex + 1;
+
+		boolean afterLast = targetIndex == tokens.size() && DropTargetType.AFTER.equals(type);
+
+		if (isIndexOfALowerThanB(tokens, source, target))
+			targetIndex--;
+
+		tokens.remove(source);
+		if (afterLast)
+		{
+			tokens.add(source);
+		}
+		else
+		{
+			tokens.add(targetIndex, source);
+		}
+
+		getState().tokens = tokens;
 	}
 
 	public void setInputField(ComboBox field)
@@ -382,6 +471,14 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		return currentValue.isEmpty();
 	}
 
+	private static <V> boolean isIndexOfALowerThanB(List<V> list, V a, V b)
+	{
+		int indexOfA = list.indexOf(a);
+		int indexOfB = list.indexOf(b);
+
+		return indexOfA < indexOfB;
+	}
+
 	public void addTokenAddedListener(TokenAddedListener listener)
 	{
 		addListener(TokenAddedEvent.class, listener, TokenAddedEvent.EVENT_METHOD);
@@ -400,6 +497,16 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	public void removeTokenRemovedListener(TokenRemovedListener listener)
 	{
 		removeListener(TokenRemovedEvent.class, listener, TokenRemovedEvent.EVENT_METHOD);
+	}
+
+	public void addTokenReorderedListener(TokenReorderedListener listener)
+	{
+		addListener(TokenReorderedEvent.class, listener, TokenReorderedEvent.EVENT_METHOD);
+	}
+
+	public void removeTokenReorderedListener(TokenReorderedListener listener)
+	{
+		removeListener(TokenReorderedEvent.class, listener, TokenReorderedEvent.EVENT_METHOD);
 	}
 
 	/**

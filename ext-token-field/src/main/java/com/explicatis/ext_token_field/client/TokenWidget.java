@@ -24,6 +24,8 @@ import com.explicatis.ext_token_field.shared.Token;
 import com.explicatis.ext_token_field.shared.TokenAction;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.DragStartEvent;
+import com.google.gwt.event.dom.client.DragStartHandler;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.FlowPanel;
@@ -34,6 +36,7 @@ import com.google.gwt.user.client.ui.Label;
 public class TokenWidget extends FocusPanel
 {
 
+	public static final String			SOURCE_TOKEN_ID_PROPERTY	= "sourcetokenid";
 	public static final String			TOKEN_CLASS_NAME			= "token";
 	public static final String			TOKEN_ACTION_CLASS_NAME		= "token-action";
 	public static final String			TOKEN_LABEL_CLASS_NAME		= "token-label";
@@ -68,6 +71,30 @@ public class TokenWidget extends FocusPanel
 
 		internalSetLabel();
 		add(rootPanel);
+		initDragAndDrop();
+	}
+
+	private void initDragAndDrop()
+	{
+		if (extTokenField.getTokenDragAndDropEnabled())
+		{
+			final Element rootElement = getElement();
+			rootElement.setDraggable(Element.DRAGGABLE_TRUE);
+			initDragStartHandler();
+		}
+	}
+
+	private void initDragStartHandler()
+	{
+		addDragStartHandler(new DragStartHandler()
+		{
+
+			@Override
+			public void onDragStart(DragStartEvent event)
+			{
+				event.setData(SOURCE_TOKEN_ID_PROPERTY, Long.toString(token.id));
+			}
+		});
 	}
 
 	private void buildTokenActions(List<TokenAction> tokenActions)
