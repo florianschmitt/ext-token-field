@@ -22,7 +22,7 @@ apply plugin: 'spring-boot'
 apply plugin: 'war'
 
 group = 'com.explicatis'
-version = '0.0.2'
+version = '0.0.3'
 
 war {
     baseName = 'ExtTokenFieldDemo'
