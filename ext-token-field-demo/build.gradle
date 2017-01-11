@@ -1,15 +1,17 @@
 buildscript {
     ext {
-        springBootVersion = '1.2.6.RELEASE'
+        springBootVersion = '1.4.3.RELEASE'
 		vaadinVersion = '7.7.6'
-		vaadinSpringVersion = '1.0.0'
-		extTokenFieldVersion = '0.2.2'
+		vaadinSpringVersion = '1.1.1'
+		extTokenFieldVersion = '0.2.3'
     }
     repositories {
+        jcenter()
         mavenCentral()
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath 'com.ofg:uptodate-gradle-plugin:+'
     }
 }
 
@@ -18,11 +20,12 @@ System.setProperty("file.encoding", "UTF-8")
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 apply plugin: 'eclipse'
-apply plugin: 'spring-boot' 
+apply plugin: 'org.springframework.boot' 
 apply plugin: 'war'
+apply plugin: 'com.ofg.uptodate'
 
 group = 'com.explicatis'
-version = '0.0.3'
+version = '0.0.4'
 
 war {
     baseName = 'ExtTokenFieldDemo'
@@ -137,5 +140,5 @@ jar {
 }
 
 task wrapper(type: Wrapper) {
-	gradleVersion = '2.8'
+	gradleVersion = '2.9'
 }
