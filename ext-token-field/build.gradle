@@ -1,30 +1,15 @@
-buildscript {
-    ext {
-        springBootVersion = '1.2.3.RELEASE'
-		vaadinVersion = '7.7.6'
-    }
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-    }
-}
-
 System.setProperty("file.encoding", "UTF-8")
 
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'eclipse'
-apply plugin: 'spring-boot' 
 
 group = 'com.explicatis'
 version = '0.2.3'
 
-defaultTasks 'jar'
-
-mainClassName = ''
+ext.vaadinVersion = '7.7.6'
+ext.widgetSetName = 'com.explicatis.ext_token_field.WidgetSet'
 
 repositories {
     mavenCentral()
@@ -32,7 +17,6 @@ repositories {
 }
 
 configurations {
-	providedRuntime
     gwt
     compile.exclude module: "hibernate-entitymanager"
 }
@@ -42,73 +26,13 @@ dependencies {
     compile group: 'com.vaadin', name: 'vaadin-themes', version: vaadinVersion
     compile group: 'com.vaadin', name: 'vaadin-server', version: vaadinVersion
     compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
-    compile "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
     gwt group: 'com.vaadin', name: 'vaadin-client-compiler', version: vaadinVersion
-    
-    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat:${springBootVersion}")
 }
-
-ext.widgetSetName = 'com.explicatis.ext_token_field.WidgetSet'
-ext.widgetSetBuildDir = 'src/main/webapp/VAADIN/widgetsets'
-
-ext.compileClassPath = files(
-        sourceSets.main.java.srcDirs,
-        sourceSets.main.output.classesDir,
-        configurations.compile.files,
-        configurations.gwt.files
-)
 
 compileJava {
 	options.encoding = 'UTF-8'
     sourceCompatibility = '1.6'
     targetCompatibility = '1.6'
-    String java6Home = System.getenv()['JAVA_1_6_HOME']
-    if (java6Home) {
-        if (System.getProperty("os.name").toLowerCase().contains('mac')) {
-            options.bootClasspath = "${java6Home}/../Classes/classes.jar"
-        } else {
-            options.bootClasspath = "${java6Home}/jre/lib/rt.jar"
-        }
-    }
-}
-
-clean {
-    dependsOn 'cleanCompileWidgetSet'
-}
-
-task compileWidgetSet {
-    dependsOn 'classes'
-
-    inputs.files compileClassPath
-    inputs.files sourceSets.main.java.srcDirs
-    outputs.dir widgetSetBuildDir
-
-    doLast {
-        javaexec {
-            maxHeapSize = '512m'
-            jvmArgs = ['-Xss1024k', '-Djava.awt.headless=true']
-            classpath = compileClassPath
-            main = 'com.google.gwt.dev.Compiler'
-            args = ['-war', widgetSetBuildDir, widgetSetName]
-        }
-
-        delete file("${widgetSetBuildDir}/WEB-INF")
-    }
-}
-
-
-task devmode(type: JavaExec) {
-    classpath = compileClassPath
-    main = 'com.google.gwt.dev.DevMode'
-    jvmArgs = ['-XX:MaxPermSize=400m', '-Xmx800m']
-    args = ['-noserver', '-war', widgetSetBuildDir, widgetSetName, '-startupUrl', 'http://localhost:8080/test', '-bindAddress', '0.0.0.0']
-}
-
-task superdevmode(type: JavaExec) {
-    classpath = compileClassPath
-    main = 'com.google.gwt.dev.codeserver.CodeServer'
-    jvmArgs = ['-XX:MaxPermSize=256m', '-Xmx512m']
-    args = [widgetSetName]
 }
 
 jar {
@@ -138,15 +62,6 @@ task sourceJar (type : Jar) {
     exclude 'rebel.xml'
 }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            artifact jar
-            artifact sourceJar
-        }
-    }
-}
-
 task fakeJar(type: Jar) {
 	manifest {
 	    attributes(
@@ -172,5 +87,5 @@ task buildZip(type: Zip) {
 }
 
 task wrapper(type: Wrapper) {
-	gradleVersion = '2.8'
+	gradleVersion = '3.3'
 }
