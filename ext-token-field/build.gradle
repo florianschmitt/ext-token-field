@@ -113,9 +113,7 @@ task superdevmode(type: JavaExec) {
 
 jar {
     baseName 'ext-token-field'
-    from (sourceSets.main.output.classesDir) {
-    	exclude 'rebel.xml'
-    }
+    exclude 'rebel.xml'
     from (sourceSets.main.java.srcDirs) {
     	include '**/WidgetSet.gwt.xml'
     	include '**/public/**'
@@ -151,14 +149,14 @@ publishing {
 
 task fakeJar(type: Jar) {
 	manifest {
-    attributes(
-        'Implementation-Title': 'Extended Token Field',
-        'Implementation-Version': version,
-        'Vaadin-Package-Version': '1',
-        'Vaadin-License-Title': 'Apache License 2.0',
-        'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html',
-        'Vaadin-Addon': "ext-token-field-${project.version}.jar"
-    )
+	    attributes(
+	        'Implementation-Title': 'Extended Token Field',
+	        'Implementation-Version': version,
+	        'Vaadin-Package-Version': '1',
+	        'Vaadin-License-Title': 'Apache License 2.0',
+	        'Vaadin-License-File': 'http://www.apache.org/licenses/LICENSE-2.0.html',
+	        'Vaadin-Addon': "ext-token-field-${project.version}.jar"
+	    )
     }
     fakeJar.manifest.writeTo("$buildDir/tmp/fakeJar/MANIFEST.MF")
 }
