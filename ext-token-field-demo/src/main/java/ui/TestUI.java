@@ -20,8 +20,10 @@ package ui;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,22 +32,20 @@ import com.explicatis.ext_token_field.SimpleTokenizable;
 import com.explicatis.ext_token_field.Tokenizable;
 import com.explicatis.ext_token_field.TokenizableAction;
 import com.explicatis.ext_token_field.events.TokenAddedEvent;
-import com.explicatis.ext_token_field.events.TokenAddedListener;
-import com.explicatis.ext_token_field.events.TokenRemovedEvent;
-import com.explicatis.ext_token_field.events.TokenRemovedListener;
-import com.explicatis.ext_token_field.events.TokenReorderedEvent;
-import com.explicatis.ext_token_field.events.TokenReorderedListener;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
-import com.vaadin.data.Item;
-import com.vaadin.data.Property.ValueChangeEvent;
-import com.vaadin.data.Property.ValueChangeListener;
-import com.vaadin.data.Validator.InvalidValueException;
-import com.vaadin.server.FontAwesome;
+import com.vaadin.data.Binder;
+import com.vaadin.data.BinderValidationStatus;
+import com.vaadin.data.HasValue.ValueChangeListener;
+import com.vaadin.data.ValidationResult;
+import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
-import com.vaadin.shared.ui.label.ContentMode;
+import com.vaadin.shared.Registration;
+import com.vaadin.shared.ui.ContentMode;
+import com.vaadin.shared.ui.MarginInfo;
 import com.vaadin.spring.annotation.SpringUI;
+import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.CheckBox;
@@ -65,18 +65,17 @@ import com.vaadin.ui.themes.ValoTheme;
 public class TestUI extends UI
 {
 
-	private static final String	LABEL		= "label";
 	private static String[]		LANGUAGES	= {"PHP", "Java", "JavaScript", "Scala", "Python", "C", "Ruby", "C++"};
 
 	private VerticalLayout		notes;
 	private VerticalLayout		mainLayout;
+	private Registration		valueChangeListenerRegistration;
+	private Set<Registration>	tokenChangeListeners;
 
 	@Override
 	protected void init(VaadinRequest vaadinRequest)
 	{
 		mainLayout = new VerticalLayout();
-		mainLayout.setMargin(true);
-		mainLayout.setSpacing(true);
 
 		Label heading = new Label("ExtTokenField");
 		heading.addStyleName(ValoTheme.LABEL_HUGE);
@@ -84,8 +83,13 @@ public class TestUI extends UI
 		subheading.addStyleName(ValoTheme.LABEL_TINY);
 
 		VerticalLayout head = new VerticalLayout(heading, subheading);
+		head.setMargin(new MarginInfo(false, true));
+		head.setSpacing(false);
 
 		notes = new VerticalLayout();
+		notes.setSizeFull();
+		notes.setMargin(new MarginInfo(false, true));
+		notes.setSpacing(false);
 
 		addNote("Keyboard controls (arrow-left, arrow-right & delete)");
 		addNote("ComboBox or Button input (TextField support is planned)");
@@ -93,7 +97,6 @@ public class TestUI extends UI
 		addNote("trims long token captions so that token is clickable to expose full caption (planned to be configurable, as to trimming length)");
 		addNote("implement <b>Tokenizable</b> interface in your bean or entity class to be able to set the fields value as a List of these objects");
 
-		notes.setSizeFull();
 		mainLayout.addComponent(head);
 		mainLayout.addComponent(notes);
 		mainLayout.addComponent(new ConfigurableLayout());
@@ -103,29 +106,33 @@ public class TestUI extends UI
 	private void addNote(String note)
 	{
 		Label l1 = new Label();
-		l1.setIcon(FontAwesome.CHECK_SQUARE);
+		l1.setIcon(VaadinIcons.CIRCLE);
 		Label l2 = new Label(note, ContentMode.HTML);
 		HorizontalLayout hl = new HorizontalLayout(l1, l2);
+		hl.setMargin(false);
 		hl.setHeight(10, Unit.PIXELS);
-		hl.setSpacing(true);
+		hl.setComponentAlignment(l1, Alignment.MIDDLE_LEFT);
+		hl.setComponentAlignment(l2, Alignment.MIDDLE_LEFT);
 		notes.addComponent(hl);
 	}
 
-	@SuppressWarnings("unchecked")
-	private static ComboBox buildComboBox()
+	private static long tokenCollectionIdDummy = 0;
+
+	private static Collection<SimpleTokenizable> initTokenCollection()
 	{
-		ComboBox result = new ComboBox();
-		result.setItemCaptionPropertyId(LABEL);
-		result.setInputPrompt("Type here to add");
-		result.addContainerProperty(LABEL, String.class, "");
+		tokenCollectionIdDummy = 0;
 
-		Stream.of(LANGUAGES)//
+		return Stream.of(LANGUAGES)//
 				.sorted()//
-				.forEach(lang -> {
-					Object addItem = result.addItem();
-					result.getItem(addItem).getItemProperty(LABEL).setValue(lang);
-				});
+				.map(name -> new SimpleTokenizable(tokenCollectionIdDummy++, name))//
+				.collect(Collectors.toList());
+	}
 
+	private static ComboBox<SimpleTokenizable> buildComboBox()
+	{
+		ComboBox<SimpleTokenizable> result = new ComboBox<>("", initTokenCollection());
+		result.setItemCaptionGenerator(SimpleTokenizable::getStringValue);
+		result.setPlaceholder("Type here to add");
 		return result;
 	}
 
@@ -133,109 +140,101 @@ public class TestUI extends UI
 	{
 		Button result = new Button();
 		result.setCaption("add element");
-		result.setIcon(FontAwesome.PLUS_CIRCLE);
+		result.setIcon(VaadinIcons.PLUS_CIRCLE);
 		result.addStyleName(ValoTheme.BUTTON_BORDERLESS);
 		result.addClickListener(event -> notificate("add clicked"));
 		return result;
 	}
 
-	private ValueChangeListener getComboBoxValueChange(ExtTokenField extTokenField, ComboBox comboBox)
+	private ValueChangeListener<SimpleTokenizable> getComboBoxValueChange(ExtTokenField extTokenField)
 	{
 		return event -> {
-			Object id = event.getProperty().getValue();
-			if (id != null)
+			SimpleTokenizable value = event.getValue();
+
+			if (value != null)
 			{
-				Item item = comboBox.getItem(id);
-				String string = (String) item.getItemProperty(LABEL).getValue();
-				int idInt = (int) id;
-				SimpleTokenizable t = new SimpleTokenizable(Integer.toUnsignedLong(idInt), string);
-				extTokenField.addTokenizable(t);
-
-				// if you would use a real container, you would filter the selected tokens out
-
-				// reset combobox
-				comboBox.setValue(null);
+				extTokenField.addTokenizable(value);
+				event.getSource().setValue(null);
 			}
 		};
+
 	}
 
 	private void addValueChangeListeners(ExtTokenField extTokenField)
 	{
-		extTokenField.addValueChangeListener(event -> notificate("Value change: " + event.getProperty().getValue()));
+		valueChangeListenerRegistration = extTokenField.addValueChangeListener(event -> notificate("Value change: " + event.getValue()));
 	}
 
 	private void addTokenListeners(ExtTokenField extTokenField)
 	{
-		extTokenField.addTokenAddedListener(event -> notificate("Token added: " + event.getTokenizable().getStringValue()));
-		extTokenField.addTokenRemovedListener(event -> notificate("Token removed: " + event.getTokenizable().getStringValue()));
-		extTokenField.addTokenReorderedListener(
-				event -> notificate(String.format("Token reordered: source=%s target=%s type=%s", event.getSourceTokenizable().getStringValue(), event.getTargetTokenizable().getStringValue(), event.getDropTargetType().toString())));
+		if (tokenChangeListeners == null)
+		{
+			tokenChangeListeners = new HashSet<>();
+		}
+
+		tokenChangeListeners.add(extTokenField.addTokenAddedListener(event -> notificate("Token added: " + event.getTokenizable().getStringValue())));
+		tokenChangeListeners.add(extTokenField.addTokenRemovedListener(event -> notificate("Token removed: " + event.getTokenizable().getStringValue())));
+		tokenChangeListeners.add(extTokenField.addTokenReorderedListener(
+				event -> notificate(String.format("Token reordered: source=%s target=%s type=%s", event.getSourceTokenizable().getStringValue(), event.getTargetTokenizable().getStringValue(), event.getDropTargetType().toString()))));
 	}
 
 	private void removeValueChangeListener(ExtTokenField extTokenField)
 	{
-		Collection<?> valueChange = extTokenField.getListeners(ValueChangeEvent.class);
-		if (valueChange != null && !valueChange.isEmpty())
+		if (valueChangeListenerRegistration != null)
 		{
-			extTokenField.removeValueChangeListener((ValueChangeListener) valueChange.iterator().next());
+			valueChangeListenerRegistration.remove();
+			valueChangeListenerRegistration = null;
 		}
 	}
 
 	private void removeValueAddedAndRemovedListeners(ExtTokenField extTokenField)
 	{
-		Collection<?> listenerAdded = extTokenField.getListeners(TokenAddedEvent.class);
-		if (listenerAdded != null && !listenerAdded.isEmpty())
+		if (tokenChangeListeners != null)
 		{
-			extTokenField.removeTokenAddedListener((TokenAddedListener) listenerAdded.iterator().next());
-		}
-
-		Collection<?> listenerRemoved = extTokenField.getListeners(TokenRemovedEvent.class);
-		if (listenerRemoved != null && !listenerRemoved.isEmpty())
-		{
-			extTokenField.removeTokenRemovedListener((TokenRemovedListener) listenerRemoved.iterator().next());
-		}
-
-		Collection<?> listenerReordered = extTokenField.getListeners(TokenReorderedEvent.class);
-		if (listenerReordered != null && !listenerReordered.isEmpty())
-		{
-			extTokenField.removeTokenReorderedListener((TokenReorderedListener) listenerReordered.iterator().next());
+			tokenChangeListeners.forEach(Registration::remove);
+			tokenChangeListeners = null;
 		}
 	}
 
 	protected void notificate(String msg)
 	{
 		Notification notification = new Notification(msg);
-		notification.setDelayMsec(-1);
+		notification.setDelayMsec(5000);
 		notification.show(Page.getCurrent());
 	}
 
 	private class ConfigurableLayout extends VerticalLayout
 	{
 
-		private ExtTokenField	tokenField						= new ExtTokenField();
-		private CheckBox		delete							= new CheckBox("activate or deactivate delete action", true);
-		private CheckBox		comboBoxOrButton				= new CheckBox("ComboBox or Button");
-		private CheckBox		readOnly						= new CheckBox("read only");
-		private CheckBox		required						= new CheckBox("required");
-		private CheckBox		enabled							= new CheckBox("enabled", true);
-		private CheckBox		addCustomAction					= new CheckBox("add or remove custom action");
-		private CheckBox		readOnlyIgnoringCustomAction	= new CheckBox("should the custom action ignore read only");
-		private CheckBox		activateTokenListeners			= new CheckBox("add or remove TokenAddedListener & TokenRemovedListener & TokenReorderedListener");
-		private CheckBox		activateValueChangeListener		= new CheckBox("add or remove ValueChangeListener");
-		private CheckBox		enableDragDrop					= new CheckBox("enable drag and drop reordering");
+		private ExtTokenField				tokenField						= new ExtTokenField();
+		private CheckBox					delete							= new CheckBox("activate or deactivate delete action", true);
+		private CheckBox					comboBoxOrButton				= new CheckBox("ComboBox or Button");
+		private CheckBox					readOnly						= new CheckBox("read only");
+		private CheckBox					required						= new CheckBox("required", true);
+		private CheckBox					enabled							= new CheckBox("enabled", true);
+		private CheckBox					addCustomAction					= new CheckBox("add or remove custom action");
+		private CheckBox					readOnlyIgnoringCustomAction	= new CheckBox("should the custom action ignore read only");
+		private CheckBox					activateTokenListeners			= new CheckBox("add or remove TokenAddedListener & TokenRemovedListener & TokenReorderedListener");
+		private CheckBox					activateValueChangeListener		= new CheckBox("add or remove ValueChangeListener");
+		private CheckBox					enableDragDrop					= new CheckBox("enable drag and drop reordering");
 
-		private ComboBox		comboBox						= TestUI.buildComboBox();
-		private Button			addButton						= buildAddButton();
+		private ComboBox<SimpleTokenizable>	comboBox						= TestUI.buildComboBox();
+		private Button						addButton						= buildAddButton();
+		private Binder<DemoBean>			binder							= new Binder<>(DemoBean.class);
 
 		public ConfigurableLayout()
 		{
+			binder.setBean(new DemoBean());
 			initTokenField();
+			bindTokenField();
+			setSampleTokenizableValue();
 
-			comboBox.addValueChangeListener(getComboBoxValueChange(tokenField, comboBox));
+			comboBox.addValueChangeListener(getComboBoxValueChange(tokenField));
 
 			FormLayout formLayout = new FormLayout(tokenField);
 			formLayout.setSizeFull();
 
+			setMargin(new MarginInfo(false, true));
 			addComponent(formLayout);
 			FormLayout configLayout = new FormLayout(readOnly, enabled, required, delete, comboBoxOrButton, addCustomAction, readOnlyIgnoringCustomAction, activateValueChangeListener, activateTokenListeners, enableDragDrop);
 			configLayout.setCaption("modify settings");
@@ -243,6 +242,13 @@ public class TestUI extends UI
 			addComponent(configLayout);
 			setupCheckBoxes();
 			initTestButtons();
+		}
+
+		private void bindTokenField()
+		{
+			binder.forField(tokenField)
+					.asRequired("a value is required")
+					.bind("tokens");
 		}
 
 		private void initTestButtons()
@@ -257,17 +263,19 @@ public class TestUI extends UI
 		private void initTokenField()
 		{
 			tokenField.setCaption("Tokens");
-			tokenField.setRequiredError("a value is required");
 			tokenField.setInputField(comboBox);
 			tokenField.setEnableDefaultDeleteTokenAction(delete.getValue());
-
-			List<Tokenizable> list = buildSampleTokenizableList();
-			tokenField.setValue(list);
 		}
 
-		private List<Tokenizable> buildSampleTokenizableList()
+		private void setSampleTokenizableValue()
 		{
-			List<Tokenizable> result = new LinkedList<>();
+			List<SimpleTokenizable> list = buildSampleTokenizableList();
+			binder.setBean(new DemoBean(list));
+		}
+
+		private List<SimpleTokenizable> buildSampleTokenizableList()
+		{
+			List<SimpleTokenizable> result = new LinkedList<>();
 
 			List<String> list = Stream.of(LANGUAGES)//
 					.limit(LANGUAGES.length - 2)//
@@ -297,7 +305,7 @@ public class TestUI extends UI
 					tokenField.setInputField(comboBox);
 			});
 
-			TokenizableAction tokenizableAction = new TokenizableAction("id1", FontAwesome.GEARS)
+			TokenizableAction tokenizableAction = new TokenizableAction("id1", VaadinIcons.VAADIN_V)
 			{
 
 				@Override
@@ -340,7 +348,7 @@ public class TestUI extends UI
 			});
 
 			activateValueChangeListener.addValueChangeListener(event -> {
-				if (tokenField.getListeners(ValueChangeEvent.class).isEmpty())
+				if (valueChangeListenerRegistration == null)
 				{
 					addValueChangeListeners(tokenField);
 				}
@@ -350,7 +358,7 @@ public class TestUI extends UI
 				}
 			});
 
-			required.addValueChangeListener(e -> tokenField.setRequired(required.getValue()));
+			required.addValueChangeListener(e -> tokenField.setRequiredIndicatorVisible(required.getValue()));
 
 			enableDragDrop.addValueChangeListener(e -> tokenField.setTokenDragDropEnabled(enableDragDrop.getValue()));
 		}
@@ -374,14 +382,19 @@ public class TestUI extends UI
 
 		private void validateField(ClickEvent event)
 		{
-			try
+			BinderValidationStatus<DemoBean> status = binder.validate();
+
+			if (status.hasErrors())
 			{
-				tokenField.validate();
-				notificate("Success");
+				List<ValidationResult> errors = status.getValidationErrors();
+				String msg = errors.stream()//
+						.map(ValidationResult::getErrorMessage)//
+						.collect(Collectors.joining(","));
+				notificate("Error: " + msg);
 			}
-			catch (InvalidValueException e)
+			else
 			{
-				notificate("Error: " + e.getMessage());
+				notificate("Success");
 			}
 		}
 	}

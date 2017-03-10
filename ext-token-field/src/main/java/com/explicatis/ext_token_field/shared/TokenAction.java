@@ -20,7 +20,6 @@ package com.explicatis.ext_token_field.shared;
 
 import java.io.Serializable;
 
-@SuppressWarnings("serial")
 public class TokenAction implements Serializable, Comparable<TokenAction>
 {
 
@@ -46,7 +45,7 @@ public class TokenAction implements Serializable, Comparable<TokenAction>
 	@Override
 	public int compareTo(TokenAction otherObject)
 	{
-		TokenAction thisObject = (TokenAction) this;
+		TokenAction thisObject = this;
 		return Integer.compare(thisObject.viewOrder, otherObject.viewOrder);
 	}
 }

@@ -31,15 +31,9 @@ import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.Token;
 import com.explicatis.ext_token_field.shared.TokenAction;
 import com.google.gwt.core.client.Scheduler;
-import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.dom.client.Node;
 import com.google.gwt.dom.client.NodeList;
-import com.google.gwt.event.dom.client.BlurEvent;
-import com.google.gwt.event.dom.client.BlurHandler;
-import com.google.gwt.event.dom.client.FocusEvent;
-import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
-import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.FlowPanel;
@@ -48,7 +42,7 @@ import com.vaadin.client.ApplicationConnection;
 import com.vaadin.client.ComponentConnector;
 import com.vaadin.client.ui.Icon;
 import com.vaadin.client.ui.VButton;
-import com.vaadin.client.ui.VFilterSelect;
+import com.vaadin.client.ui.VComboBox;
 import com.vaadin.shared.Connector;
 
 import elemental.events.KeyboardEvent.KeyCode;
@@ -60,7 +54,7 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 
 	private List<TokenWidget>			tokenWidgets			= new LinkedList<TokenWidget>();
 	private ExtTokenFieldServerRpc		serverRpc;
-	private VFilterSelect				inputFilterSelect;
+	private VComboBox					inputFilterSelect;
 	private VButton						inputButton;
 	private Token						tokenToTheRight;
 	private List<TokenAction>			tokenActions;
@@ -85,14 +79,14 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 	{
 		if (icons == null)
 		{
-			icons = new HashMap<TokenAction, String>();
+			icons = new HashMap<>();
 		}
 		icons.put(tokenAction, url);
 	}
 
 	public void setTokenActions(Set<TokenAction> tokenActions)
 	{
-		List<TokenAction> sortedList = new LinkedList<TokenAction>(tokenActions);
+		List<TokenAction> sortedList = new LinkedList<>(tokenActions);
 		Collections.sort(sortedList);
 		this.tokenActions = sortedList;
 	}
@@ -121,7 +115,7 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 	{
 		if (inputField != null)
 		{
-			inputFilterSelect = (VFilterSelect) ((ComponentConnector) inputField).getWidget();
+			inputFilterSelect = (VComboBox) ((ComponentConnector) inputField).getWidget();
 			/**
 			 * add key down handler, to select the token at the very left of the filter select when left key was pressed
 			 * 
@@ -134,18 +128,12 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 
 	private KeyDownHandler initKeyDownHandler()
 	{
-		return new KeyDownHandler()
-		{
-
-			@Override
-			public void onKeyDown(KeyDownEvent event)
+		return event -> {
+			if (event.getNativeKeyCode() == KeyCode.LEFT)
 			{
-				if (event.getNativeKeyCode() == KeyCode.LEFT)
+				if (ExtTokenFieldWidget.this.tokenWidgets.size() > 0)
 				{
-					if (ExtTokenFieldWidget.this.tokenWidgets.size() > 0)
-					{
-						tokenWidgets.get(tokenWidgets.size() - 1).setFocus(true);
-					}
+					tokenWidgets.get(tokenWidgets.size() - 1).setFocus(true);
 				}
 			}
 		};
@@ -163,18 +151,12 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 		if (tokenToTheRight != null)
 		{
 			final TokenWidget tokenWidget = findTokenWidget(tokenToTheRight);
-			Scheduler.get().scheduleDeferred(new ScheduledCommand()
-			{
-
-				@Override
-				public void execute()
+			Scheduler.get().scheduleDeferred(() -> {
+				if (tokenWidget != null)
 				{
-					if (tokenWidget != null)
-					{
-						tokenWidget.setFocus(true);
-					}
-					tokenToTheRight = null;
+					tokenWidget.setFocus(true);
 				}
+				tokenToTheRight = null;
 			});
 		}
 		else
@@ -182,17 +164,11 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 			boolean lastTokenWasRemoved = (currentTokenCount == 0) && (tokenCount == 1);
 			if (lastTokenWasRemoved)
 			{
-				Scheduler.get().scheduleDeferred(new ScheduledCommand()
-				{
-
-					@Override
-					public void execute()
-					{
-						if (inputFilterSelect != null)
-							inputFilterSelect.tb.setFocus(true);
-						else if (inputButton != null)
-							inputButton.setFocus(true);
-					}
+				Scheduler.get().scheduleDeferred(() -> {
+					if (inputFilterSelect != null)
+						inputFilterSelect.tb.setFocus(true);
+					else if (inputButton != null)
+						inputButton.setFocus(true);
 				});
 			}
 		}
@@ -221,49 +197,27 @@ public class ExtTokenFieldWidget extends FlowPanel implements HasEnabled
 				}
 			}
 		};
-		widget.addFocusHandler(new FocusHandler()
-		{
+		widget.addFocusHandler(event -> widget.getElement().addClassName(TokenWidget.FOCUS_CLASS_NAME));
 
-			@Override
-			public void onFocus(FocusEvent event)
+		widget.addBlurHandler(event -> widget.getElement().removeClassName(TokenWidget.FOCUS_CLASS_NAME));
+
+		widget.addKeyDownHandler(event -> {
+			if (event.getNativeKeyCode() == KeyCodes.KEY_LEFT)
 			{
-				widget.getElement().addClassName(TokenWidget.FOCUS_CLASS_NAME);
+				leftKeyDown(widget);
 			}
-		});
-
-		widget.addBlurHandler(new BlurHandler()
-		{
-
-			@Override
-			public void onBlur(BlurEvent event)
+			else if (event.getNativeKeyCode() == KeyCodes.KEY_RIGHT)
 			{
-				widget.getElement().removeClassName(TokenWidget.FOCUS_CLASS_NAME);
+				rightKeyDown(widget);
 			}
-		});
-
-		widget.addKeyDownHandler(new KeyDownHandler()
-		{
-
-			@Override
-			public void onKeyDown(KeyDownEvent event)
+			else if (event.getNativeKeyCode() == KeyCodes.KEY_DELETE)
 			{
-				if (event.getNativeKeyCode() == KeyCodes.KEY_LEFT)
+				TokenAction deleteTokenAction = findTokenAction(TokenAction.DELETE_TOKEN_ACTION_IDENTIFIER);
+				if (deleteTokenAction != null)
 				{
-					leftKeyDown(widget);
-				}
-				else if (event.getNativeKeyCode() == KeyCodes.KEY_RIGHT)
-				{
-					rightKeyDown(widget);
-				}
-				else if (event.getNativeKeyCode() == KeyCodes.KEY_DELETE)
-				{
-					TokenAction deleteTokenAction = findTokenAction(TokenAction.DELETE_TOKEN_ACTION_IDENTIFIER);
-					if (deleteTokenAction != null)
+					if (isEnabled() && !isReadOnly())
 					{
-						if (isEnabled() && !isReadOnly())
-						{
-							tokenActionClicked(widget, deleteTokenAction);
-						}
+						tokenActionClicked(widget, deleteTokenAction);
 					}
 				}
 			}

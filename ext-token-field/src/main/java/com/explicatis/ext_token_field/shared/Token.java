@@ -20,7 +20,6 @@ package com.explicatis.ext_token_field.shared;
 
 import java.io.Serializable;
 
-@SuppressWarnings("serial")
 public class Token implements Serializable
 {
 

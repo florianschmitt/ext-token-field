@@ -25,7 +25,6 @@ import com.explicatis.ext_token_field.Tokenizable;
 import com.explicatis.ext_token_field.shared.DropTargetType;
 import com.vaadin.util.ReflectTools;
 
-@SuppressWarnings("serial")
 public class TokenReorderedEvent extends EventObject
 {
 

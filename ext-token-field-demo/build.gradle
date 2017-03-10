@@ -1,9 +1,8 @@
 buildscript {
     ext {
-        springBootVersion = '1.4.3.RELEASE'
-		vaadinVersion = '7.7.6'
-		vaadinSpringVersion = '1.1.1'
-		extTokenFieldVersion = '0.2.3'
+        springBootVersion = '1.5.2.RELEASE'
+		vaadinVersion = '8.0.2'
+		vaadinSpringVersion = '2.0.0'
     }
     repositories {
         jcenter()
@@ -25,7 +24,7 @@ apply plugin: 'war'
 apply plugin: 'com.ofg.uptodate'
 
 group = 'com.explicatis'
-version = '0.0.4'
+version = '0.0.5'
 
 war {
     baseName = 'ExtTokenFieldDemo'
@@ -45,7 +44,7 @@ configurations {
 }
 
 dependencies {
-	compile "com.explicatis:ext-token-field:${extTokenFieldVersion}"
+	compile 'com.explicatis:ext-token-field'
     compile group: 'com.vaadin', name: 'vaadin-client', version: vaadinVersion
     compile group: 'com.vaadin', name: 'vaadin-themes', version: vaadinVersion
     compile group: 'com.vaadin', name: 'vaadin-server', version: vaadinVersion
@@ -69,16 +68,9 @@ ext.compileClassPath = files(
 
 compileJava {
 	options.encoding = 'UTF-8'
+	
     sourceCompatibility = '1.8'
     targetCompatibility = '1.8'
-    String java6Home = System.getenv()['JAVA_1_6_HOME']
-    if (java6Home) {
-        if (System.getProperty("os.name").toLowerCase().contains('mac')) {
-            options.bootClasspath = "${java6Home}/../Classes/classes.jar"
-        } else {
-            options.bootClasspath = "${java6Home}/jre/lib/rt.jar"
-        }
-    }
 }
 
 task compileWidgetSet {
@@ -140,5 +132,5 @@ jar {
 }
 
 task wrapper(type: Wrapper) {
-	gradleVersion = '3.3'
+	gradleVersion = '3.4.1'
 }

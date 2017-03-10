@@ -4,11 +4,8 @@ import com.explicatis.ext_token_field.shared.DropTargetType;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.Token;
 import com.google.gwt.event.dom.client.DragLeaveEvent;
-import com.google.gwt.event.dom.client.DragLeaveHandler;
 import com.google.gwt.event.dom.client.DragOverEvent;
-import com.google.gwt.event.dom.client.DragOverHandler;
 import com.google.gwt.event.dom.client.DropEvent;
-import com.google.gwt.event.dom.client.DropHandler;
 import com.google.gwt.user.client.ui.SimplePanel;
 
 public class DropTargetWidget extends SimplePanel
@@ -65,43 +62,21 @@ public class DropTargetWidget extends SimplePanel
 
 	private void initDropHandler()
 	{
-		addDomHandler(new DropHandler()
-		{
-
-			@Override
-			public void onDrop(DropEvent event)
-			{
-				String sourcetokenid = event.getData(TokenWidget.SOURCE_TOKEN_ID_PROPERTY);
-				wasDropped(sourcetokenid);
-				setHighlighted(false);
-			}
+		addDomHandler(event -> {
+			String sourcetokenid = event.getData(TokenWidget.SOURCE_TOKEN_ID_PROPERTY);
+			wasDropped(sourcetokenid);
+			setHighlighted(false);
 		}, DropEvent.getType());
 	}
 
 	private void initDragLeaveHandler()
 	{
-		addDomHandler(new DragLeaveHandler()
-		{
-
-			@Override
-			public void onDragLeave(DragLeaveEvent event)
-			{
-				setHighlighted(false);
-			}
-		}, DragLeaveEvent.getType());
+		addDomHandler(event -> setHighlighted(false), DragLeaveEvent.getType());
 	}
 
 	private void initDragOverHandler()
 	{
-		addDomHandler(new DragOverHandler()
-		{
-
-			@Override
-			public void onDragOver(DragOverEvent event)
-			{
-				setHighlighted(true);
-			}
-		}, DragOverEvent.getType());
+		addDomHandler(event -> setHighlighted(true), DragOverEvent.getType());
 	}
 
 }

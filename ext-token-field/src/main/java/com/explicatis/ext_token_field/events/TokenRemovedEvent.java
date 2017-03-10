@@ -24,7 +24,6 @@ import java.util.EventObject;
 import com.explicatis.ext_token_field.Tokenizable;
 import com.vaadin.util.ReflectTools;
 
-@SuppressWarnings("serial")
 public class TokenRemovedEvent extends EventObject
 {
 

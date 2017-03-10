@@ -22,10 +22,7 @@ import java.util.List;
 
 import com.explicatis.ext_token_field.shared.Token;
 import com.explicatis.ext_token_field.shared.TokenAction;
-import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.DragStartEvent;
-import com.google.gwt.event.dom.client.DragStartHandler;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.FlowPanel;
@@ -86,15 +83,7 @@ public class TokenWidget extends FocusPanel
 
 	private void initDragStartHandler()
 	{
-		addDragStartHandler(new DragStartHandler()
-		{
-
-			@Override
-			public void onDragStart(DragStartEvent event)
-			{
-				event.setData(SOURCE_TOKEN_ID_PROPERTY, Long.toString(token.id));
-			}
-		});
+		addDragStartHandler(event -> event.setData(SOURCE_TOKEN_ID_PROPERTY, Long.toString(token.id)));
 	}
 
 	private void buildTokenActions(List<TokenAction> tokenActions)
@@ -115,15 +104,7 @@ public class TokenWidget extends FocusPanel
 			Anchor actionAnchor = new Anchor(action.label);
 			actionAnchor.getElement().setClassName(TOKEN_ACTION_CLASS_NAME);
 			rootPanel.add(actionAnchor);
-			actionAnchor.addClickHandler(new ClickHandler()
-			{
-
-				@Override
-				public void onClick(ClickEvent event)
-				{
-					onTokenActionClicked(action);
-				}
-			});
+			actionAnchor.addClickHandler(event -> onTokenActionClicked(action));
 
 			buildIcon(action, actionAnchor);
 		}
@@ -141,15 +122,7 @@ public class TokenWidget extends FocusPanel
 
 	protected ClickHandler labelClickHandler()
 	{
-		return new ClickHandler()
-		{
-
-			@Override
-			public void onClick(ClickEvent event)
-			{
-				toggleExpanded();
-			}
-		};
+		return event -> toggleExpanded();
 	}
 
 	protected void onTokenActionClicked(TokenAction tokenAction)

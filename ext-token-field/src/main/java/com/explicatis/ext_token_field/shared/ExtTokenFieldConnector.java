@@ -25,7 +25,6 @@ import com.vaadin.client.communication.StateChangeEvent;
 import com.vaadin.client.ui.AbstractFieldConnector;
 import com.vaadin.shared.ui.Connect;
 
-@SuppressWarnings("serial")
 @Connect(ExtTokenField.class)
 public class ExtTokenFieldConnector extends AbstractFieldConnector
 {

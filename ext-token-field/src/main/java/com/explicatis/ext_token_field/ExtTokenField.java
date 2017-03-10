@@ -20,12 +20,16 @@ package com.explicatis.ext_token_field;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.explicatis.ext_token_field.events.TokenAddedEvent;
 import com.explicatis.ext_token_field.events.TokenAddedListener;
@@ -38,7 +42,8 @@ import com.explicatis.ext_token_field.shared.ExtTokenFieldServerRpc;
 import com.explicatis.ext_token_field.shared.ExtTokenFieldState;
 import com.explicatis.ext_token_field.shared.Token;
 import com.explicatis.ext_token_field.shared.TokenAction;
-import com.vaadin.server.FontAwesome;
+import com.vaadin.icons.VaadinIcons;
+import com.vaadin.shared.Registration;
 import com.vaadin.ui.AbstractField;
 import com.vaadin.ui.AbstractSingleComponentContainer;
 import com.vaadin.ui.Button;
@@ -46,8 +51,7 @@ import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.HasComponents;
 
-@SuppressWarnings("serial")
-public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> implements HasComponents
+public class ExtTokenField extends AbstractField<List<Tokenizable>> implements HasComponents
 {
 
 	private ExtTokenFieldServerRpc			serverRpc						= new ExtTokenFieldServerRpc()
@@ -70,21 +74,16 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 																				}
 																			};
 
-	private Map<Long, Tokenizable>			identifierToTokenizable			= new HashMap<Long, Tokenizable>();
-	private Map<String, TokenizableAction>	identifierToTokenizableAction	= new HashMap<String, TokenizableAction>();
+	private Map<Long, Tokenizable>			identifierToTokenizable			= new HashMap<>();
+	private Map<String, TokenizableAction>	identifierToTokenizableAction	= new HashMap<>();
+	private List<Tokenizable>				value;
 
 	public ExtTokenField()
 	{
 		registerRpc(serverRpc);
-		addAttachListener(new AttachListener()
-		{
-
-			@Override
-			public void attach(AttachEvent event)
-			{
-				if (!hasInputButton() && !hasInputField())
-					throw new RuntimeException("no input field nor input button set");
-			}
+		addAttachListener(event -> {
+			if (!hasInputButton() && !hasInputField())
+				throw new RuntimeException("no input field nor input button set");
 		});
 	}
 
@@ -107,27 +106,6 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 			if (hasTokenizableAction(defaultDeleteTokenAction))
 				removeTokenizableAction(defaultDeleteTokenAction);
 		}
-	}
-
-	@Override
-	protected void setInternalValue(List<? extends Tokenizable> newValue)
-	{
-		super.setInternalValue(newValue);
-
-		identifierToTokenizable.clear();
-		List<Token> newList = new ArrayList<Token>();
-
-		if (newValue != null && newValue.size() > 0)
-		{
-			for (Tokenizable t : newValue)
-			{
-				Token token = convertTokenizableToToken(t);
-				identifierToTokenizable.put(t.getIdentifier(), t);
-				newList.add(token);
-			}
-		}
-
-		getState().tokens = newList;
 	}
 
 	protected Token convertTokenizableToToken(Tokenizable value)
@@ -163,12 +141,13 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		boolean containsKey = identifierToTokenizableAction.containsKey(tokenizableAction.getIdentifier());
 		if (!containsKey)
 		{
-			throw new RuntimeException("TokenizableAction with identifier " + tokenizableAction.getIdentifier() + " not found");
+			throw new NoSuchElementException(String.format("TokenizableAction with identifier %s not found", tokenizableAction.getIdentifier()));
 		}
 
-		TokenAction toRemove = findTokenActionByTokenizableAction(tokenizableAction);
-		getState().tokenActions.remove(toRemove);
-		identifierToTokenizableAction.remove(tokenizableAction.getIdentifier());
+		findTokenActionByTokenizableAction(tokenizableAction).ifPresent(toRemove -> {
+			getState().tokenActions.remove(toRemove);
+			identifierToTokenizableAction.remove(tokenizableAction.getIdentifier());
+		});
 	}
 
 	protected TokenAction fromTokenizableActionToTokenAction(TokenizableAction a)
@@ -183,6 +162,8 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 
 	public void addTokenizable(Tokenizable tokenizable)
 	{
+		Objects.requireNonNull(tokenizable, () -> "tokenizable must not be null");
+
 		if (identifierToTokenizable.keySet().contains(tokenizable.getIdentifier()))
 		{
 			return;
@@ -192,49 +173,43 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		identifierToTokenizable.put(tokenizable.getIdentifier(), tokenizable);
 		addToken(token);
 
-		@SuppressWarnings("unchecked")
-		List<Tokenizable> currentValue = (List<Tokenizable>) getValue();
-		if (currentValue == null)
-		{
-			currentValue = new LinkedList<Tokenizable>();
-		}
-		currentValue.add(tokenizable);
-		setValue(currentValue);
+		List<Tokenizable> currentValue = getOptionalValue()
+				.orElseGet(() -> new LinkedList<Tokenizable>());
+
+		List<Tokenizable> copy = new LinkedList<>(currentValue);
+		copy.add(tokenizable);
+		setValue(copy);
 
 		fireEvent(new TokenAddedEvent(this, tokenizable));
-		fireEvent(new ValueChangeEvent(this));
 	}
 
 	public void removeTokenizable(Tokenizable tokenizable)
 	{
-		Token token = findTokenByTokenizable(tokenizable);
+		Objects.requireNonNull(tokenizable, () -> "tokenizable must not be null");
+
+		Token token = findTokenByTokenizable(tokenizable)//
+				.orElseThrow(() -> new NoSuchElementException(String.format("tokenizable %s could not be found", tokenizable.getStringValue())));
+
 		removeToken(token);
-		List<? extends Tokenizable> internalValue = getInternalValue();
-		List<Tokenizable> newList = new LinkedList<Tokenizable>();
-		for (Tokenizable t : internalValue)
-		{
-			if (t.getIdentifier() != tokenizable.getIdentifier())
-			{
-				newList.add(t);
-			}
-		}
+
+		List<Tokenizable> newList = getValue().stream()
+				.filter(t -> t.getIdentifier() != tokenizable.getIdentifier())
+				.collect(Collectors.toList());
+
 		identifierToTokenizable.remove(token.id);
 		setValue(newList);
 
 		fireEvent(new TokenRemovedEvent(this, tokenizable));
-		// valueChangeEvent doesn't need to be fired, because a new list is created
 	}
 
 	protected void handleDroppedToken(Token sourceToken, Token targetToken, DropTargetType type)
 	{
 		reorderToken(sourceToken, targetToken, type);
 
-		@SuppressWarnings("unchecked")
-		List<Tokenizable> currentValue = (List<Tokenizable>) getValue();
-		if (currentValue == null)
-		{
-			throw new IllegalStateException("value cannot be null, if token was dropped");
-		}
+		List<Tokenizable> currentValue = getOptionalValue()//
+				.orElseThrow(() -> new IllegalStateException("value cannot be null, if token was dropped"));
+
+		List<Tokenizable> copy = new LinkedList<>(currentValue);
 
 		Tokenizable sourceTokenizable = findTokenizableInListByToken(currentValue, sourceToken);
 		Tokenizable targetTokenizable = findTokenizableInListByToken(currentValue, targetToken);
@@ -247,61 +222,48 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		if (isIndexOfALowerThanB(currentValue, sourceTokenizable, targetTokenizable))
 			targetIndex--;
 
-		currentValue.remove(sourceTokenizable);
+		copy.remove(sourceTokenizable);
 		if (afterLast)
 		{
-			currentValue.add(sourceTokenizable);
+			copy.add(sourceTokenizable);
 		}
 		else
 		{
-			currentValue.add(targetIndex, sourceTokenizable);
+			copy.add(targetIndex, sourceTokenizable);
 		}
 
-		setValue(currentValue);
+		setValue(copy);
 
 		fireEvent(new TokenReorderedEvent(this, sourceTokenizable, targetTokenizable, type));
-		fireEvent(new ValueChangeEvent(this));
 	}
 
 	private Tokenizable findTokenizableInListByToken(List<Tokenizable> list, Token token)
 	{
-		for (Tokenizable tokenizable : list)
-		{
-			if (tokenizable.getIdentifier() == token.id)
-			{
-				return tokenizable;
-			}
-		}
-		return null;
+		return list.stream()
+				.filter(tokenizable -> tokenizable.getIdentifier() == token.id)
+				.findAny()
+				.orElseThrow(() -> new NoSuchElementException("could not find token"));
 	}
 
 	public boolean hasTokenizableAction(TokenizableAction tokenizableAction)
 	{
-		return findTokenActionByTokenizableAction(tokenizableAction) != null;
+		return findTokenActionByTokenizableAction(tokenizableAction).isPresent();
 	}
 
-	protected TokenAction findTokenActionByTokenizableAction(TokenizableAction tokenizableAction)
+	protected Optional<TokenAction> findTokenActionByTokenizableAction(TokenizableAction tokenizableAction)
 	{
-		for (TokenAction tokenAction : getState().tokenActions)
-		{
-			if (tokenAction.identifier.equals(tokenizableAction.getIdentifier()))
-			{
-				return tokenAction;
-			}
-		}
-		return null;
+		Objects.requireNonNull(tokenizableAction, () -> "tokenizableAction must not be null");
+
+		return getState().tokenActions.stream()
+				.filter(tokenAction -> tokenAction.identifier.equals(tokenizableAction.getIdentifier()))
+				.findAny();
 	}
 
-	protected Token findTokenByTokenizable(Tokenizable tokenizable)
+	protected Optional<Token> findTokenByTokenizable(Tokenizable tokenizable)
 	{
-		for (Token token : getState().tokens)
-		{
-			if (token.id == tokenizable.getIdentifier())
-			{
-				return token;
-			}
-		}
-		return null;
+		return getState().tokens.stream()
+				.filter(token -> token.id == tokenizable.getIdentifier())
+				.findAny();
 	}
 
 	private void addToken(Token token)
@@ -338,7 +300,7 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		getState().tokens = tokens;
 	}
 
-	public void setInputField(ComboBox field)
+	public void setInputField(ComboBox<?> field)
 	{
 		if (field != null)
 		{
@@ -378,9 +340,9 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		}
 	}
 
-	public ComboBox getInputField()
+	public ComboBox<?> getInputField()
 	{
-		return (ComboBox) getState().inputField;
+		return (ComboBox<?>) getState().inputField;
 	}
 
 	public Button getInputButton()
@@ -403,32 +365,23 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		return new ComponentIterator();
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	@Override
-	public Class<? extends List<? extends Tokenizable>> getType()
-	{
-		return (Class) List.class;
-	}
-
-	protected Component internalGetInputComponentOrNull()
+	protected Optional<Focusable> internalGetInputComponent()
 	{
 		if (hasInputField())
-			return getInputField();
+			return Optional.of(getInputField());
 		else if (hasInputButton())
-			return getInputButton();
+			return Optional.of(getInputButton());
 		else
-			return null;
+			return Optional.empty();
 	}
 
 	protected void updateComponentVisibleState()
 	{
 		boolean readOnly = isReadOnly();
 		boolean enabled = isEnabled();
-		Component componentOrNull = internalGetInputComponentOrNull();
-		if (componentOrNull != null)
-		{
-			componentOrNull.setVisible(enabled && !readOnly);
-		}
+
+		internalGetInputComponent()//
+				.ifPresent(component -> component.setVisible(enabled && !readOnly));
 	}
 
 	@Override
@@ -448,27 +401,68 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 	@Override
 	public void focus()
 	{
-		Component componentOrNull = internalGetInputComponentOrNull();
-		if (componentOrNull != null)
-		{
-			if (Focusable.class.isInstance(componentOrNull))
-			{
-				Focusable focusable = (Focusable) componentOrNull;
-				focusable.focus();
-			}
-		}
+		internalGetInputComponent()//
+				.ifPresent(Focusable::focus);
 	}
 
 	@Override
 	public boolean isEmpty()
 	{
-		@SuppressWarnings("unchecked")
-		List<Tokenizable> currentValue = (List<Tokenizable>) getValue();
-		if (currentValue == null)
+		return getValue().isEmpty();
+	}
+
+	/**
+	 * Returns the current List of Tokenizable of the field. If no token is added, empty list is returned.
+	 */
+	@Override
+	public List<Tokenizable> getValue()
+	{
+		if (value == null)
 		{
-			return true;
+			return getEmptyValue();
 		}
-		return currentValue.isEmpty();
+		return value;
+	}
+
+	@Override
+	protected void doSetValue(List<Tokenizable> value)
+	{
+		this.value = value;
+		identifierToTokenizable.clear();
+		List<Token> newList = new ArrayList<>();
+
+		if (value != null && !value.isEmpty())
+		{
+			for (Tokenizable t : value)
+			{
+				Token token = convertTokenizableToToken(t);
+				identifierToTokenizable.put(t.getIdentifier(), t);
+				newList.add(token);
+			}
+		}
+
+		getState().tokens = newList;
+	}
+
+	@Override
+	public List<Tokenizable> getEmptyValue()
+	{
+		return Collections.emptyList();
+	}
+
+	public Registration addTokenAddedListener(TokenAddedListener listener)
+	{
+		return addListener(TokenAddedEvent.class, listener, TokenAddedEvent.EVENT_METHOD);
+	}
+
+	public Registration addTokenRemovedListener(TokenRemovedListener listener)
+	{
+		return addListener(TokenRemovedEvent.class, listener, TokenRemovedEvent.EVENT_METHOD);
+	}
+
+	public Registration addTokenReorderedListener(TokenReorderedListener listener)
+	{
+		return addListener(TokenReorderedEvent.class, listener, TokenReorderedEvent.EVENT_METHOD);
 	}
 
 	private static <V> boolean isIndexOfALowerThanB(List<V> list, V a, V b)
@@ -477,36 +471,6 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 		int indexOfB = list.indexOf(b);
 
 		return indexOfA < indexOfB;
-	}
-
-	public void addTokenAddedListener(TokenAddedListener listener)
-	{
-		addListener(TokenAddedEvent.class, listener, TokenAddedEvent.EVENT_METHOD);
-	}
-
-	public void removeTokenAddedListener(TokenAddedListener listener)
-	{
-		removeListener(TokenAddedEvent.class, listener, TokenAddedEvent.EVENT_METHOD);
-	}
-
-	public void addTokenRemovedListener(TokenRemovedListener listener)
-	{
-		addListener(TokenRemovedEvent.class, listener, TokenRemovedEvent.EVENT_METHOD);
-	}
-
-	public void removeTokenRemovedListener(TokenRemovedListener listener)
-	{
-		removeListener(TokenRemovedEvent.class, listener, TokenRemovedEvent.EVENT_METHOD);
-	}
-
-	public void addTokenReorderedListener(TokenReorderedListener listener)
-	{
-		addListener(TokenReorderedEvent.class, listener, TokenReorderedEvent.EVENT_METHOD);
-	}
-
-	public void removeTokenReorderedListener(TokenReorderedListener listener)
-	{
-		removeListener(TokenReorderedEvent.class, listener, TokenReorderedEvent.EVENT_METHOD);
 	}
 
 	/**
@@ -633,7 +597,7 @@ public class ExtTokenField extends AbstractField<List<? extends Tokenizable>> im
 
 		public DefaultDeleteTokenAction()
 		{
-			super(TokenAction.DELETE_TOKEN_ACTION_IDENTIFIER, Integer.MAX_VALUE, FontAwesome.MINUS_CIRCLE);
+			super(TokenAction.DELETE_TOKEN_ACTION_IDENTIFIER, Integer.MAX_VALUE, VaadinIcons.MINUS_CIRCLE);
 		}
 
 		@Override

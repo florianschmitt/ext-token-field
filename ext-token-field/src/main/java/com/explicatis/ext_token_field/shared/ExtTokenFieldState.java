@@ -27,7 +27,6 @@ import com.vaadin.shared.AbstractFieldState;
 import com.vaadin.shared.Connector;
 import com.vaadin.shared.annotations.DelegateToWidget;
 
-@SuppressWarnings("serial")
 public class ExtTokenFieldState extends AbstractFieldState
 {
 
